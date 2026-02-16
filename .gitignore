@@ -19,7 +19,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-.github/workflows
+.github/workflows/
 
 # Virtual Environment
 venv/
