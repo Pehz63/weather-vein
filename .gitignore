@@ -24,6 +24,8 @@ wheels/
 venv/
 env/
 ENV/
+.venv/
+.ipynb_checkpoints/
 
 # IDE
 .idea/
