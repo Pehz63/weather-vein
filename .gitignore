@@ -35,3 +35,4 @@ ENV/
 *.png
 *.csv
 !data/sample.csv
+.env
