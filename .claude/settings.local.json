@@ -13,7 +13,10 @@
       "Bash(.venv/Scripts/jupyter.exe kernelspec:*)",
       "Bash(nvidia-smi:*)",
       "Bash(where claude:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(grep:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
