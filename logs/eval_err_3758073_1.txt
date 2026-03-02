@@ -1,0 +1,14 @@
+/users/4/rozan012/.conda/envs/pfns/lib/python3.10/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (6.0.0.post1)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+Traceback (most recent call last):
+  File "/users/4/rozan012/weather-vein/sample_efficiency.py", line 408, in <module>
+    pfn_model, y_mean, y_std = train_pfns4bo(sim_data, nt, args.device)
+  File "/users/4/rozan012/weather-vein/sample_efficiency.py", line 152, in train_pfns4bo
+    result = pfns_train.train(**add_criterion(config, device))
+  File "/users/4/rozan012/weather-vein/sample_efficiency.py", line 149, in add_criterion
+    bar_distribution.get_bucket_limits(n_buckets, ys=get_ys(config, device).cpu())
+  File "/users/4/rozan012/weather-vein/sample_efficiency.py", line 139, in get_ys
+    b = config['priordataloader_class'].get_batch_method(
+  File "/users/4/rozan012/weather-vein/sample_efficiency.py", line 108, in get_batch
+    X_out[:, b, :] = X_all[idx]
+RuntimeError: The expanded size of the tensor (5000) must match the existing size (500) at non-singleton dimension 0.  Target sizes: [5000, 5].  Tensor sizes: [500, 5]

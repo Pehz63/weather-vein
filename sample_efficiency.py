@@ -1,5 +1,7 @@
 import argparse
 import os
+import io
+import contextlib
 import random
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,11 +18,18 @@ from gpytorch.kernels import MaternKernel, ScaleKernel
 from tabpfn import TabPFNRegressor
 from wfcrl import environments as envs
 
+from pfns4bo import priors, encoders, utils, bar_distribution, train as pfns_train
+from pfns4bo.priors.utils import Batch
+
 from src import step_policy, obs_to_row
 
 import warnings
 warnings.filterwarnings("ignore")
 
+for var in ['RANK', 'WORLD_SIZE', 'MASTER_ADDR', 'MASTER_PORT', 'LOCAL_RANK',
+            'SLURM_PROCID', 'SLURM_NTASKS', 'SLURM_NODELIST']:
+    os.environ.pop(var, None)
+    
 parser = argparse.ArgumentParser()
 parser.add_argument('--seed', type=int, default=27)
 parser.add_argument('--device', type=str, default='cuda')
@@ -31,7 +40,7 @@ args = parser.parse_args()
 OPTIONS = {"wind_speed": 8, "wind_direction": 270}
 LAYOUTS = ['Turb3_Row1_Floris', 'Ablaincourt_Floris']
 
-SAMPLE_BUDGETS = [50, 100, 250, 500, 1000, 5000]
+SAMPLE_BUDGETS = [150, 250, 500, 1000, 5000]
 GP_MAX_SAMPLES = 500
 
 
@@ -71,37 +80,131 @@ def eval_do_nothing(env):
 
 
 def ramp_and_eval(env, target_yaws, seed):
-    # iteratively pushing the yaws to optimized ones since env allows change of 5 deg per episode
-    # e.g. GP finds optimal as -35, but you can change only -5 per episode, so it takes 7 episodes to reach optimality
     obs = env.reset(seed=seed, options=OPTIONS)
     r, done = 0, False
     while not done:
-        delta = np.clip(target_yaws - obs['yaw'], -5, 5) 
+        delta = np.clip(target_yaws - obs['yaw'], -5, 5)
         obs, reward, term, trunc, _ = env.step({'yaw': delta})
         r += reward
         done = term or trunc
     return r[0]
 
 
+def train_pfns4bo(sim_data, nt, device, epochs=10):
+    feature_cols = [f"yaw_{i}" for i in range(nt)] + ['freewind_measurements_0', 'freewind_measurements_1']
+    num_features = len(feature_cols)
+
+    X_all = torch.tensor(sim_data[feature_cols].values, dtype=torch.float32)
+    y_raw = torch.tensor(sim_data[[f'power_{i}' for i in range(nt)]].sum(axis=1).values, dtype=torch.float32)
+    y_mean = y_raw.mean()
+    y_std = y_raw.std().clamp(min=1e-6)
+    y_all = (y_raw - y_mean) / y_std
+
+    def get_batch(batch_size, seq_len, num_features, device, hyperparameters, **kwargs):
+        X_out = torch.zeros(seq_len, batch_size, num_features)
+        Y_out = torch.zeros(seq_len, batch_size)
+        for b in range(batch_size):
+            idx = torch.randperm(len(X_all))[:seq_len]
+            X_out[:, b, :] = X_all[idx]
+            Y_out[:, b] = y_all[idx]
+        return Batch(x=X_out.to(device), y=Y_out.to(device), target_y=Y_out.to(device))
+
+    config = {
+        'priordataloader_class': priors.get_batch_to_dataloader(get_batch),
+        'encoder_generator': encoders.get_normalized_uniform_encoder(
+            encoders.get_variable_num_features_encoder(encoders.Linear)
+        ),
+        'y_encoder_generator': encoders.Linear,
+        'emsize': 512,
+        'nhead': 4,
+        'nhid': 1024,
+        'nlayers': 6,
+        'epochs': epochs,
+        'lr': 0.0001,
+        'bptt': 60,
+        'batch_size': 128,
+        'steps_per_epoch': 512,
+        'warmup_epochs': 2,
+        'scheduler': utils.get_cosine_schedule_with_warmup,
+        'aggregate_k_gradients': 2,
+        'weight_decay': 0.0,
+        'train_mixed_precision': False,
+        'efficient_eval_masking': True,
+        'single_eval_pos_gen': utils.get_uniform_single_eval_pos_sampler(50, min_len=1),
+        'extra_prior_kwargs_dict': {'num_features': num_features, 'hyperparameters': {}},
+        'verbose': False,
+    }
+
+    def get_ys(config, device):
+        b = config['priordataloader_class'].get_batch_method(
+            128, n_samples, num_features, epoch=0, device=device,
+            hyperparameters={**config['extra_prior_kwargs_dict']['hyperparameters'],
+                             'num_hyperparameter_samples_per_batch': -1}
+        )
+        return b.target_y.flatten()
+
+    def add_criterion(config, device):
+        n_buckets = max(10, min(100, len(y_all) // 5))
+        return {**config, 'criterion': bar_distribution.FullSupportBarDistribution(
+            bar_distribution.get_bucket_limits(n_buckets, ys=get_ys(config, device).cpu())
+        )}
+
+    result = pfns_train.train(**add_criterion(config, device))
+    model = result[2]
+    return model, y_mean, y_std
+
+
+def eval_pfns4bo(env, sim_data, seed, device):
+    nt = env.num_turbines
+    feature_cols = [f"yaw_{i}" for i in range(nt)] + ['freewind_measurements_0', 'freewind_measurements_1']
+
+    pfn_model, y_mean, y_std = train_pfns4bo(sim_data, nt, device)
+    pfn_model = pfn_model.to(device)
+    pfn_model.eval()
+
+    X_all = torch.tensor(sim_data[feature_cols].values, dtype=torch.float32)
+    y_raw = torch.tensor(sim_data[[f'power_{i}' for i in range(nt)]].sum(axis=1).values, dtype=torch.float32)
+    y_norm = ((y_raw - y_mean) / y_std).unsqueeze(1)  # (N, 1)
+    X_ctx = X_all.unsqueeze(1).to(device)              # (N, 1, n_features)
+    y_ctx = y_ctx = ((y_raw - y_mean) / y_std).unsqueeze(1).to(device)  # (N, 1)
+
+    obs = env.reset(seed=seed, options=OPTIONS)
+    freewind = torch.tensor(obs['freewind_measurements'], dtype=torch.float32).to(device)
+
+    yaws = torch.zeros(nt, dtype=torch.float32, device=device, requires_grad=True)
+    opt = torch.optim.Adam([yaws], lr=1.0)
+
+    for _ in range(100):
+        opt.zero_grad()
+        x_query = torch.cat([yaws, freewind]).reshape(1, 1, -1)
+        x_full = torch.cat([X_ctx, x_query], dim=0)
+        y_full = torch.cat([y_ctx, torch.zeros(1, 1, device=device)], dim=0)
+        x_full = torch.cat([X_ctx, x_query], dim=0)           # (N+1, 1, 5)
+        y_full = torch.cat([y_ctx, torch.zeros(1, 1, device=device)], dim=0)  # (N+1, 1)
+        with contextlib.redirect_stdout(io.StringIO()):
+            logits = pfn_model((x_full, y_full), single_eval_pos=len(X_ctx), only_return_standard_out=False)['standard']
+        (-pfn_model.criterion.mean(logits)).backward()
+        opt.step()
+        yaws.data.clamp_(-40, 40)
+
+    return ramp_and_eval(env, yaws.detach().cpu().numpy(), seed)
+
+
 def eval_pfn(env, sim_data, seed):
-    # since we can backprop through tabpfn, we use nelder-mead which treats the model as a blackbox
     nt = env.num_turbines
     feature_cols = [f"yaw_{i}" for i in range(nt)] + ['freewind_measurements_0', 'freewind_measurements_1']
     X = sim_data[feature_cols]
-    y = sim_data[[f'power_{i}' for i in range(nt)]]
+    y = sim_data[[f'power_{i}' for i in range(nt)]].sum(axis=1)
 
-    models = []
-    for i in range(nt):
-        reg = TabPFNRegressor(random_state=seed, device=args.device)
-        reg.fit(X, y[f'power_{i}'])
-        models.append(reg)
+    reg = TabPFNRegressor(random_state=seed, device=args.device)
+    reg.fit(X, y)
 
     obs = env.reset(seed=seed, options=OPTIONS)
     freewind = obs['freewind_measurements']
 
     def objective(yaws):
         X_in = np.concatenate([yaws, freewind]).reshape(1, -1)
-        return -sum(m.predict(X_in)[0] for m in models)
+        return -reg.predict(X_in)[0]
 
     result = minimize(objective, x0=np.zeros(nt), method='Nelder-Mead',
                       options={'maxiter': 50, 'xatol': 0.1, 'fatol': 1e-5})
@@ -113,25 +216,18 @@ def eval_gp(env, sim_data, seed):
     nt = env.num_turbines
     feature_cols = [f"yaw_{i}" for i in range(nt)] + ['freewind_measurements_0', 'freewind_measurements_1']
     d_features = len(feature_cols)
-    d_total = d_features + 1
-
     n_samples = min(GP_MAX_SAMPLES, len(sim_data))
     X_base = sim_data[feature_cols].values[:n_samples]
-    powers = sim_data[[f'power_{i}' for i in range(nt)]].values[:n_samples]
+    Y = sim_data[[f'power_{i}' for i in range(nt)]].values[:n_samples].sum(axis=1, keepdims=True)
 
-    n = len(X_base)
-    X_long = np.repeat(X_base, nt, axis=0)
-    task_col = np.tile(list(range(nt)), n).reshape(-1, 1)
-    X_long = np.hstack([X_long, task_col])
-    Y_long = powers.reshape(-1, 1)
-
-    train_X = torch.tensor(X_long, dtype=torch.double).to(args.device)
-    train_Y = torch.tensor(Y_long, dtype=torch.double).to(args.device)
+    train_X = torch.tensor(X_base, dtype=torch.double).to(args.device)
+    train_Y = torch.tensor(Y, dtype=torch.double).to(args.device)
 
     torch.manual_seed(seed)
-    gp_model = MultiTaskGP(
-        train_X, train_Y, task_feature=-1,
-        input_transform=Normalize(d=d_total, indices=list(range(d_features))),
+    from botorch.models import SingleTaskGP
+    gp_model = SingleTaskGP(
+        train_X, train_Y,
+        input_transform=Normalize(d=d_features),
         covar_module=ScaleKernel(MaternKernel(nu=0.5, ard_num_dims=d_features)),
         outcome_transform=Standardize(m=1),
     )
@@ -140,18 +236,14 @@ def eval_gp(env, sim_data, seed):
     gp_model.eval()
 
     obs = env.reset(seed=seed, options=OPTIONS)
-    freewind = torch.tensor(obs['freewind_measurements'], dtype=torch.double)
+    freewind = torch.tensor(obs['freewind_measurements'], dtype=torch.double).to(args.device)
 
     yaws = torch.zeros(nt, dtype=torch.double, device=args.device, requires_grad=True)
-    freewind = freewind.to(args.device)
     optimizer = torch.optim.Adam([yaws], lr=1.0)
     for _ in range(100):
         optimizer.zero_grad()
-        test_X = torch.stack([
-            torch.cat([yaws, freewind, torch.tensor([t], dtype=torch.double).to(args.device)])
-            for t in range(nt)
-        ])
-        pred_power = gp_model.posterior(test_X).mean.sum()
+        test_X = torch.cat([yaws, freewind]).unsqueeze(0)
+        pred_power = gp_model.posterior(test_X).mean
         (-pred_power).backward()
         optimizer.step()
         yaws.data.clamp_(-40, 40)
@@ -196,22 +288,22 @@ for layout in LAYOUTS:
 
             sim_data = collect_sim_data(env, n_samples, actual_seed)
 
-            # PFN
             pfn_score = eval_pfn(env, sim_data, actual_seed)
+            pfns4bo_score = eval_pfns4bo(env, sim_data, actual_seed, args.device)
 
-            # GP (skip if over budget)
             if n_samples <= GP_MAX_SAMPLES:
                 gp_score = eval_gp(env, sim_data, actual_seed)
             else:
                 gp_score = np.nan
 
-            print(f"PFN={pfn_score:.1f}, GP={gp_score:.1f}")
+            print(f"TabPFN={pfn_score:.1f}, PFNs4BO={pfns4bo_score:.1f}, GP={gp_score:.1f}")
 
             all_results.append({
                 'layout': layout_short,
                 'n_samples': n_samples,
                 'seed': actual_seed,
                 'pfn': pfn_score,
+                'pfns4bo': pfns4bo_score,
                 'gp': gp_score,
                 'do_nothing': dn,
             })
@@ -224,7 +316,7 @@ print('Finished computing...')
 # ============================================================
 # Plot sample efficiency curves
 # ============================================================
-base = {'Turb3_Row1_Floris': [239.5, 237.7], 'Ablaincourt_Floris': [351.0, 351.7]}
+base = {'Turb3_Row1': [239.5, 237.7], 'Ablaincourt': [351.0, 351.7]}
 
 fig, axes = plt.subplots(1, len(LAYOUTS), figsize=(7 * len(LAYOUTS), 5))
 if len(LAYOUTS) == 1:
@@ -234,7 +326,6 @@ for ax, layout in zip(axes, LAYOUTS):
     layout_short = layout.replace('_Floris', '')
     sub = df[df['layout'] == layout_short]
 
-    # PFN
     pfn_stats = sub.groupby('n_samples')['pfn'].agg(['mean', 'std']).reset_index()
     ax.plot(pfn_stats['n_samples'], pfn_stats['mean'], 'o-', label='TabPFN', color='#2196F3')
     ax.fill_between(pfn_stats['n_samples'],
@@ -242,7 +333,13 @@ for ax, layout in zip(axes, LAYOUTS):
                      pfn_stats['mean'] + pfn_stats['std'],
                      alpha=0.2, color='#2196F3')
 
-    # GP
+    pfns4bo_stats = sub.groupby('n_samples')['pfns4bo'].agg(['mean', 'std']).reset_index()
+    ax.plot(pfns4bo_stats['n_samples'], pfns4bo_stats['mean'], 'o-', label='PFNs4BO', color='#9C27B0')
+    ax.fill_between(pfns4bo_stats['n_samples'],
+                     pfns4bo_stats['mean'] - pfns4bo_stats['std'],
+                     pfns4bo_stats['mean'] + pfns4bo_stats['std'],
+                     alpha=0.2, color='#9C27B0')
+
     gp_stats = sub.dropna(subset=['gp']).groupby('n_samples')['gp'].agg(['mean', 'std']).reset_index()
     if len(gp_stats) > 0:
         ax.plot(gp_stats['n_samples'], gp_stats['mean'], 's-', label='GP', color='#FF9800')
@@ -251,14 +348,12 @@ for ax, layout in zip(axes, LAYOUTS):
                          gp_stats['mean'] + gp_stats['std'],
                          alpha=0.2, color='#FF9800')
 
-    # Do-nothing baseline
     dn_val = sub['do_nothing'].iloc[0]
     ax.axhline(y=dn_val, color='gray', linestyle='--', label='Do-nothing', alpha=0.7)
-    
-    # Paper baselines
-    ax.axhline(y=base[layout][0], color='darkgreen', linestyle='--', label='IPPO_WFCRL', alpha=0.7)
-    ax.axhline(y=base[layout][1], color='magenta', linestyle='--', label='MAPPO_WFCRL', alpha=0.7)
-    
+
+    ax.axhline(y=base[layout_short][0], color='darkgreen', linestyle='--', label='IPPO_WFCRL', alpha=0.7)
+    ax.axhline(y=base[layout_short][1], color='magenta', linestyle='--', label='MAPPO_WFCRL', alpha=0.7)
+
     ax.set_xscale('log')
     ax.set_xlabel('Number of training samples')
     ax.set_ylabel('Episode Return (Sc. 1)')
@@ -268,10 +363,6 @@ for ax, layout in zip(axes, LAYOUTS):
 
 plt.tight_layout()
 plt.savefig('sample_efficiency.png', bbox_inches='tight')
-
-# Save raw results
-df.to_csv(RESULTS_CSV, index=False)
-print(f"Saved: {RESULTS_CSV}")
 
 # ============================================================
 # Yaw sweep: predicted total power vs yaw_0 (others at 0)
@@ -311,8 +402,28 @@ for ax, layout in zip(axes, LAYOUTS):
         X_in[0, -2] = 8.0
         X_in[0, -1] = 270.0
         pfn_preds.append(sum(m.predict(X_in)[0] for m in models))
-
     ax.plot(yaws_sweep, pfn_preds, label='TabPFN', color='#2196F3')
+
+    # --- PFNs4BO ---
+    pfn_model, y_mean, y_std = train_pfns4bo(sim_data, nt, args.device)
+    pfn_model.eval()
+    X_ctx = torch.tensor(X.values, dtype=torch.float32).unsqueeze(1).to(args.device)
+    y_raw = torch.tensor(y_df.sum(axis=1).values, dtype=torch.float32)
+    y_ctx = ((y_raw - y_mean) / y_std).unsqueeze(1).to(args.device)
+    freewind_sweep = torch.tensor([8.0, 270.0], dtype=torch.float32).to(args.device)
+
+    pfns4bo_preds = []
+    with torch.no_grad():
+        for y in yaws_sweep:
+            yaw_vec = torch.zeros(nt, dtype=torch.float32, device=args.device)
+            yaw_vec[0] = y
+            x_query = torch.cat([yaw_vec, freewind_sweep]).reshape(1, 1, -1)
+            x_full = torch.cat([X_ctx, x_query], dim=0)
+            y_full = torch.cat([y_ctx, torch.zeros(1, 1, device=args.device)], dim=0)
+            logits = pfn_model(x_full, y_full, single_eval_pos=len(X))
+            pred = pfn_model.criterion.mean(logits).item() * y_std.item() + y_mean.item()
+            pfns4bo_preds.append(pred)
+    ax.plot(yaws_sweep, pfns4bo_preds, label='PFNs4BO', color='#9C27B0')
 
     # --- GP ---
     X_base = sim_data[feature_cols].values
@@ -339,7 +450,6 @@ for ax, layout in zip(axes, LAYOUTS):
 
     gp_preds = []
     for y in yaws_sweep:
-        # columns: [yaw_0, ..., yaw_{nt-1}, freewind_0, freewind_1, task]
         X_in = torch.zeros(nt, d_total, dtype=torch.double).to(args.device)
         X_in[:, 0] = y
         X_in[:, nt] = 8.0
@@ -347,7 +457,6 @@ for ax, layout in zip(axes, LAYOUTS):
         for t in range(nt):
             X_in[t, -1] = t
         gp_preds.append(gp_model.posterior(X_in).mean.sum().detach().cpu().numpy())
-
     ax.plot(yaws_sweep, gp_preds, label='GP', color='#FF9800')
 
     ax.set_xlabel('Yaw angle (turbine 0)')
