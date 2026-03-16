@@ -16,7 +16,19 @@
       "Bash(cd:*)",
       "Bash(grep:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "WebFetch(domain:arxiv.org)",
+      "WebFetch(domain:papers.nips.cc)",
+      "WebFetch(domain:openreview.net)",
+      "WebFetch(domain:neurips.cc)",
+      "Bash(ollama:*)",
+      "Bash(winget install:*)",
+      "Bash(cmd.exe /c \"winget install Ollama.Ollama --accept-source-agreements --accept-package-agreements\")",
+      "Bash(cmd.exe /c \"ollama pull qwen2.5:7b\")",
+      "Bash(cmd.exe /c \"where /r \"\"C:\\\\Users\\\\zjpeh\\\\AppData\"\" ollama.exe 2>/dev/null || where /r \"\"C:\\\\Program Files\"\" ollama.exe 2>/dev/null || dir /s /b C:\\\\Users\\\\zjpeh\\\\AppData\\\\Local\\\\Programs\\\\Ollama\\\\ollama.exe 2>&1\")",
+      "Bash(cmd.exe /c \"C:\\\\Users\\\\zjpeh\\\\AppData\\\\Local\\\\Programs\\\\Ollama\\\\ollama.exe pull qwen2.5:7b\")",
+      "Bash(cmd.exe /c \"C:\\\\Users\\\\zjpeh\\\\AppData\\\\Local\\\\Programs\\\\Ollama\\\\ollama.exe list\")"
     ]
   }
 }
