@@ -1,0 +1,137 @@
+description: Base template for turbines using Gauss Curl Hybrid model
+farm:
+  layout_x:
+  - 0.0
+  - 0.0
+  - 0.0
+  - 1197.1
+  - 1197.6
+  - 1196.6999999999998
+  - 2394.2
+  - 2393.8
+  - 2393.8
+  - 2393.8
+  - 2394.2
+  - 3590.8999999999996
+  - 3590.8999999999996
+  - 3590.8999999999996
+  - 3591.3
+  - 3590.3999999999996
+  - 4788.0
+  - 4788.4
+  - 4787.6
+  - 4787.5
+  - 4788.0
+  - 5984.7
+  - 5984.7
+  - 5984.6
+  - 5985.1
+  - 5985.1
+  - 7181.7
+  - 7181.7
+  - 7182.2
+  - 7181.3
+  - 7181.8
+  - 8379.3
+  layout_y:
+  - 1425.9500000000003
+  - -0.15000000000009095
+  - -1426.15
+  - 1425.35
+  - 0.15000000000009095
+  - -1425.35
+  - 2850.7500000000005
+  - 1426.0499999999997
+  - 0.0500000000001819
+  - -1426.0499999999997
+  - -2851.1499999999996
+  - 2851.5499999999997
+  - 1425.4500000000003
+  - -0.5499999999997272
+  - -1425.75
+  - -2851.25
+  - 2850.85
+  - 1425.7500000000005
+  - 0.15000000000009095
+  - -1425.85
+  - -2851.05
+  - 2851.65
+  - 1425.65
+  - -0.4499999999998181
+  - -1425.65
+  - -2851.6499999999996
+  - 2851.0499999999997
+  - 1424.9500000000003
+  - -0.15000000000009095
+  - -1425.75
+  - -2850.95
+  - 2851.2500000000005
+  turbine_type:
+  - nrel_5MW
+floris_version: v3.0.0
+flow_field:
+  air_density: 1.225
+  reference_wind_height: -1
+  turbulence_intensity: 0.06
+  wind_directions:
+  - 270
+  wind_shear: 0.12
+  wind_speeds:
+  - 8
+  wind_veer: 0.0
+logging:
+  console:
+    enable: true
+    level: WARNING
+  file:
+    enable: false
+    level: WARNING
+name: GCH
+solver:
+  turbine_grid_points: 3
+  type: turbine_grid
+wake:
+  enable_secondary_steering: true
+  enable_transverse_velocities: true
+  enable_yaw_added_recovery: true
+  model_strings:
+    combination_model: sosfs
+    deflection_model: gauss
+    turbulence_model: crespo_hernandez
+    velocity_model: gauss
+  wake_deflection_parameters:
+    gauss:
+      ad: 0.0
+      alpha: 0.58
+      bd: 0.0
+      beta: 0.077
+      dm: 1.0
+      ka: 0.38
+      kb: 0.004
+    jimenez:
+      ad: 0.0
+      bd: 0.0
+      kd: 0.05
+  wake_turbulence_parameters:
+    crespo_hernandez:
+      ai: 0.8
+      constant: 0.5
+      downstream: -0.32
+      initial: 0.1
+  wake_velocity_parameters:
+    cc:
+      a_f: 3.11
+      a_s: 0.179367259
+      alpha_mod: 1.0
+      b_f: -0.68
+      b_s: 0.0118889215
+      c_f: 2.41
+      c_s1: 0.0563691592
+      c_s2: 0.13290157
+    gauss:
+      alpha: 0.58
+      beta: 0.077
+      ka: 0.38
+      kb: 0.004
+    jensen:
+      we: 0.05
