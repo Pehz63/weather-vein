@@ -1,0 +1,8 @@
+Turb_TCRWP_Floris... 149000 rows, 32 turbines, 1000 episodes
+Turb3_Row1_Floris... 149000 rows, 3 turbines, 1000 episodes
+Turb6_Row2_Floris... 149000 rows, 6 turbines, 1000 episodes
+Turb16_Row5_Floris... 149000 rows, 16 turbines, 1000 episodes
+Turb32_Row5_Floris... 149000 rows, 32 turbines, 1000 episodes
+Ablaincourt_Floris... 149000 rows, 7 turbines, 1000 episodes
+HornsRev1_Floris... 149000 rows, 80 turbines, 1000 episodes
+HornsRev2_Floris... 

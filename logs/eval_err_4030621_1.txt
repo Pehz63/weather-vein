@@ -1,0 +1,33 @@
+/users/4/rozan012/.conda/envs/pfns/lib/python3.10/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (6.0.0.post1)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+Traceback (most recent call last):
+  File "/users/4/rozan012/weather-vein/sample_efficiency.py", line 423, in <module>
+  File "/users/4/rozan012/.conda/envs/pfns/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/users/4/rozan012/.conda/envs/pfns/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/users/4/rozan012/.conda/envs/pfns/lib/python3.10/site-packages/pfns4bo/transformer.py", line 155, in forward
+    return self._forward(*args, **kwargs)
+  File "/users/4/rozan012/.conda/envs/pfns/lib/python3.10/site-packages/pfns4bo/transformer.py", line 169, in _forward
+    x_src = self.encoder(x_src)
+  File "/users/4/rozan012/.conda/envs/pfns/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/users/4/rozan012/.conda/envs/pfns/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/users/4/rozan012/.conda/envs/pfns/lib/python3.10/site-packages/torch/nn/modules/container.py", line 253, in forward
+    input = module(input)
+  File "/users/4/rozan012/.conda/envs/pfns/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/users/4/rozan012/.conda/envs/pfns/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/users/4/rozan012/.conda/envs/pfns/lib/python3.10/site-packages/pfns4bo/encoders.py", line 177, in forward
+    return self.base_encoder(x)
+  File "/users/4/rozan012/.conda/envs/pfns/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1776, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/users/4/rozan012/.conda/envs/pfns/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1787, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/users/4/rozan012/.conda/envs/pfns/lib/python3.10/site-packages/pfns4bo/encoders.py", line 233, in forward
+    return super().forward(x)
+  File "/users/4/rozan012/.conda/envs/pfns/lib/python3.10/site-packages/torch/nn/modules/linear.py", line 134, in forward
+    return F.linear(input, self.weight, self.bias)
+RuntimeError: Expected all tensors to be on the same device, but got mat1 is on cuda:0, different from other tensors on cpu (when checking argument in method wrapper_CUDA_addmm)

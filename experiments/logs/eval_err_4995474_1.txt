@@ -1,0 +1,3 @@
+/users/4/rozan012/weather-vein/wfcrl-env/wfcrl/mdp.py:203: UserWarning: No step size was provided for actuator yaw. Step size will default to 1.
+  warn(
+[2026-03-25T10:00:32.005] error: *** JOB 4995474 ON cn1067 CANCELLED AT 2026-03-25T10:00:32 DUE TO TIME LIMIT ***

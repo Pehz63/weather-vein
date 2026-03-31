@@ -90,12 +90,13 @@ def ramp_and_eval(env, target_yaws, seed):
     return r[0]
 
 
-def train_pfns4bo(sim_data, nt, device, epochs=10):
-    feature_cols = [f"yaw_{i}" for i in range(nt)] + ['freewind_measurements_0', 'freewind_measurements_1']
+def train_pfns4bo(sim_data, nt, device, epochs=15):
+    feature_cols = [f"yaw_{i}" for i in range(nt)] + ['freewind_measurements_0', 'freewind_measurements_1'] +\
+                    [f"wind_speed_{i}" for i in range(nt)] + [f"wind_direction_{i}" for i in range(nt)]
     num_features = len(feature_cols)
 
     X_all = torch.tensor(sim_data[feature_cols].values, dtype=torch.float32)
-    y_raw = torch.tensor(sim_data[[f'power_{i}' for i in range(nt)]].sum(axis=1).values, dtype=torch.float32)
+    y_raw = torch.tensor(sim_data['reward'].values, dtype=torch.float32)
     y_mean = y_raw.mean()
     y_std = y_raw.std().clamp(min=1e-6)
     y_all = (y_raw - y_mean) / y_std
@@ -104,7 +105,7 @@ def train_pfns4bo(sim_data, nt, device, epochs=10):
         X_out = torch.zeros(seq_len, batch_size, num_features)
         Y_out = torch.zeros(seq_len, batch_size)
         for b in range(batch_size):
-            idx = torch.randperm(len(X_all))[:seq_len]
+            idx = torch.randint(0, len(X_all), (seq_len,))
             X_out[:, b, :] = X_all[idx]
             Y_out[:, b] = y_all[idx]
         return Batch(x=X_out.to(device), y=Y_out.to(device), target_y=Y_out.to(device))
@@ -122,7 +123,7 @@ def train_pfns4bo(sim_data, nt, device, epochs=10):
         'epochs': epochs,
         'lr': 0.0001,
         'bptt': 60,
-        'batch_size': 128,
+        'batch_size': 64,
         'steps_per_epoch': 512,
         'warmup_epochs': 2,
         'scheduler': utils.get_cosine_schedule_with_warmup,
@@ -156,27 +157,29 @@ def train_pfns4bo(sim_data, nt, device, epochs=10):
 
 def eval_pfns4bo(env, sim_data, seed, device):
     nt = env.num_turbines
-    feature_cols = [f"yaw_{i}" for i in range(nt)] + ['freewind_measurements_0', 'freewind_measurements_1']
+    feature_cols = [f"yaw_{i}" for i in range(nt)] + ['freewind_measurements_0', 'freewind_measurements_1'] +\
+                    [f"wind_speed_{i}" for i in range(nt)] + [f"wind_direction_{i}" for i in range(nt)]
 
     pfn_model, y_mean, y_std = train_pfns4bo(sim_data, nt, device)
     pfn_model = pfn_model.to(device)
     pfn_model.eval()
 
     X_all = torch.tensor(sim_data[feature_cols].values, dtype=torch.float32)
-    y_raw = torch.tensor(sim_data[[f'power_{i}' for i in range(nt)]].sum(axis=1).values, dtype=torch.float32)
+    y_raw = torch.tensor(sim_data['reward'].values, dtype=torch.float32)
     y_norm = ((y_raw - y_mean) / y_std).unsqueeze(1)  # (N, 1)
     X_ctx = X_all.unsqueeze(1).to(device)              # (N, 1, n_features)
     y_ctx = y_ctx = ((y_raw - y_mean) / y_std).unsqueeze(1).to(device)  # (N, 1)
 
     obs = env.reset(seed=seed, options=OPTIONS)
     freewind = torch.tensor(obs['freewind_measurements'], dtype=torch.float32).to(device)
-
+    ws, wd = torch.tensor(obs['wind_speed'], dtype=torch.float32).to(device), torch.tensor(obs['wind_direction'], dtype=torch.float32).to(device)
+    
     yaws = torch.zeros(nt, dtype=torch.float32, device=device, requires_grad=True)
-    opt = torch.optim.Adam([yaws], lr=1.0)
+    opt = torch.optim.Adam([yaws], lr=0.1)
 
     for _ in range(100):
         opt.zero_grad()
-        x_query = torch.cat([yaws, freewind]).reshape(1, 1, -1)
+        x_query = torch.cat([yaws, freewind, ws, wd]).reshape(1, 1, -1)
         x_full = torch.cat([X_ctx, x_query], dim=0)
         y_full = torch.cat([y_ctx, torch.zeros(1, 1, device=device)], dim=0)
         x_full = torch.cat([X_ctx, x_query], dim=0)           # (N+1, 1, 5)
@@ -192,18 +195,20 @@ def eval_pfns4bo(env, sim_data, seed, device):
 
 def eval_pfn(env, sim_data, seed):
     nt = env.num_turbines
-    feature_cols = [f"yaw_{i}" for i in range(nt)] + ['freewind_measurements_0', 'freewind_measurements_1']
+    feature_cols = [f"yaw_{i}" for i in range(nt)] + ['freewind_measurements_0', 'freewind_measurements_1'] +\
+                    [f"wind_speed_{i}" for i in range(nt)] + [f"wind_direction_{i}" for i in range(nt)]
     X = sim_data[feature_cols]
-    y = sim_data[[f'power_{i}' for i in range(nt)]].sum(axis=1)
+    y = sim_data['reward']
 
     reg = TabPFNRegressor(random_state=seed, device=args.device)
     reg.fit(X, y)
 
     obs = env.reset(seed=seed, options=OPTIONS)
     freewind = obs['freewind_measurements']
-
+    ws, wd = obs['wind_speed'], obs['wind_direction']
+    
     def objective(yaws):
-        X_in = np.concatenate([yaws, freewind]).reshape(1, -1)
+        X_in = np.concatenate([yaws, freewind, ws, wd]).reshape(1, -1)
         return -reg.predict(X_in)[0]
 
     result = minimize(objective, x0=np.zeros(nt), method='Nelder-Mead',
@@ -214,11 +219,12 @@ def eval_pfn(env, sim_data, seed):
 
 def eval_gp(env, sim_data, seed):
     nt = env.num_turbines
-    feature_cols = [f"yaw_{i}" for i in range(nt)] + ['freewind_measurements_0', 'freewind_measurements_1']
+    feature_cols = [f"yaw_{i}" for i in range(nt)] + ['freewind_measurements_0', 'freewind_measurements_1'] +\
+                    [f"wind_speed_{i}" for i in range(nt)] + [f"wind_direction_{i}" for i in range(nt)]
     d_features = len(feature_cols)
     n_samples = min(GP_MAX_SAMPLES, len(sim_data))
     X_base = sim_data[feature_cols].values[:n_samples]
-    Y = sim_data[[f'power_{i}' for i in range(nt)]].values[:n_samples].sum(axis=1, keepdims=True)
+    Y = sim_data['reward'].values[:n_samples]
 
     train_X = torch.tensor(X_base, dtype=torch.double).to(args.device)
     train_Y = torch.tensor(Y, dtype=torch.double).to(args.device)
@@ -237,12 +243,13 @@ def eval_gp(env, sim_data, seed):
 
     obs = env.reset(seed=seed, options=OPTIONS)
     freewind = torch.tensor(obs['freewind_measurements'], dtype=torch.double).to(args.device)
-
+    ws, wd = torch.tensor(obs['wind_speed'], dtype=torch.float32).to(device), torch.tensor(obs['wind_direction'], dtype=torch.float32).to(device)
+    
     yaws = torch.zeros(nt, dtype=torch.double, device=args.device, requires_grad=True)
     optimizer = torch.optim.Adam([yaws], lr=1.0)
     for _ in range(100):
         optimizer.zero_grad()
-        test_X = torch.cat([yaws, freewind]).unsqueeze(0)
+        test_X = torch.cat([yaws, freewind, ws, wd]).unsqueeze(0)
         pred_power = gp_model.posterior(test_X).mean
         (-pred_power).backward()
         optimizer.step()
@@ -363,107 +370,3 @@ for ax, layout in zip(axes, LAYOUTS):
 
 plt.tight_layout()
 plt.savefig('sample_efficiency.png', bbox_inches='tight')
-
-# ============================================================
-# Yaw sweep: predicted total power vs yaw_0 (others at 0)
-# ============================================================
-SWEEP_SAMPLES = 500
-SWEEP_SEED = args.seed
-
-fig, axes = plt.subplots(1, len(LAYOUTS), figsize=(7 * len(LAYOUTS), 5))
-if len(LAYOUTS) == 1:
-    axes = [axes]
-
-yaws_sweep = np.linspace(-40, 40, 100)
-
-for ax, layout in zip(axes, LAYOUTS):
-    layout_short = layout.replace('_Floris', '')
-    env = make_env(layout)
-    nt = env.num_turbines
-    feature_cols = [f"yaw_{i}" for i in range(nt)] + ['freewind_measurements_0', 'freewind_measurements_1']
-    d_features = len(feature_cols)
-    d_total = d_features + 1
-
-    sim_data = collect_sim_data(env, SWEEP_SAMPLES, SWEEP_SEED)
-    X = sim_data[feature_cols]
-    y_df = sim_data[[f'power_{i}' for i in range(nt)]]
-
-    # --- TabPFN ---
-    models = []
-    for i in range(nt):
-        reg = TabPFNRegressor(random_state=SWEEP_SEED, device=args.device)
-        reg.fit(X, y_df[f'power_{i}'])
-        models.append(reg)
-
-    pfn_preds = []
-    for y in yaws_sweep:
-        X_in = np.zeros((1, d_features))
-        X_in[0, 0] = y
-        X_in[0, -2] = 8.0
-        X_in[0, -1] = 270.0
-        pfn_preds.append(sum(m.predict(X_in)[0] for m in models))
-    ax.plot(yaws_sweep, pfn_preds, label='TabPFN', color='#2196F3')
-
-    # --- PFNs4BO ---
-    pfn_model, y_mean, y_std = train_pfns4bo(sim_data, nt, args.device)
-    pfn_model.eval()
-    X_ctx = torch.tensor(X.values, dtype=torch.float32).unsqueeze(1).to(args.device)
-    y_raw = torch.tensor(y_df.sum(axis=1).values, dtype=torch.float32)
-    y_ctx = ((y_raw - y_mean) / y_std).unsqueeze(1).to(args.device)
-    freewind_sweep = torch.tensor([8.0, 270.0], dtype=torch.float32).to(args.device)
-
-    pfns4bo_preds = []
-    with torch.no_grad():
-        for y in yaws_sweep:
-            yaw_vec = torch.zeros(nt, dtype=torch.float32, device=args.device)
-            yaw_vec[0] = y
-            x_query = torch.cat([yaw_vec, freewind_sweep]).reshape(1, 1, -1)
-            x_full = torch.cat([X_ctx, x_query], dim=0)
-            y_full = torch.cat([y_ctx, torch.zeros(1, 1, device=args.device)], dim=0)
-            logits = pfn_model(x_full, y_full, single_eval_pos=len(X))
-            pred = pfn_model.criterion.mean(logits).item() * y_std.item() + y_mean.item()
-            pfns4bo_preds.append(pred)
-    ax.plot(yaws_sweep, pfns4bo_preds, label='PFNs4BO', color='#9C27B0')
-
-    # --- GP ---
-    X_base = sim_data[feature_cols].values
-    powers = y_df.values
-    n = len(X_base)
-    X_long = np.repeat(X_base, nt, axis=0)
-    task_col = np.tile(list(range(nt)), n).reshape(-1, 1)
-    X_long = np.hstack([X_long, task_col])
-    Y_long = powers.reshape(-1, 1)
-
-    train_X = torch.tensor(X_long, dtype=torch.double).to(args.device)
-    train_Y = torch.tensor(Y_long, dtype=torch.double).to(args.device)
-
-    torch.manual_seed(SWEEP_SEED)
-    gp_model = MultiTaskGP(
-        train_X, train_Y, task_feature=-1,
-        input_transform=Normalize(d=d_total, indices=list(range(d_features))),
-        covar_module=ScaleKernel(MaternKernel(nu=0.5, ard_num_dims=d_features)),
-        outcome_transform=Standardize(m=1),
-    )
-    mll = ExactMarginalLogLikelihood(gp_model.likelihood, gp_model)
-    fit_gpytorch_model(mll)
-    gp_model.eval()
-
-    gp_preds = []
-    for y in yaws_sweep:
-        X_in = torch.zeros(nt, d_total, dtype=torch.double).to(args.device)
-        X_in[:, 0] = y
-        X_in[:, nt] = 8.0
-        X_in[:, nt + 1] = 270.0
-        for t in range(nt):
-            X_in[t, -1] = t
-        gp_preds.append(gp_model.posterior(X_in).mean.sum().detach().cpu().numpy())
-    ax.plot(yaws_sweep, gp_preds, label='GP', color='#FF9800')
-
-    ax.set_xlabel('Yaw angle (turbine 0)')
-    ax.set_ylabel('Predicted total power')
-    ax.set_title(f'{layout_short} — Learned power vs yaw')
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-
-plt.tight_layout()
-plt.savefig('yaw_sweep_comparison.png', bbox_inches='tight')
