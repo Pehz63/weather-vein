@@ -1,3 +1,5 @@
+.__simul__/
+
 # Python
 __pycache__/
 *.py[cod]
@@ -19,11 +21,14 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+.github/workflows/
 
 # Virtual Environment
 venv/
 env/
 ENV/
+.venv/
+.ipynb_checkpoints/
 
 # IDE
 .idea/

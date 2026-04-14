@@ -1,0 +1,3 @@
+[submodule "wfcrl-env"]
+	path = wfcrl-env
+	url = https://github.com/ifpen/wfcrl-env.git
