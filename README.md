@@ -1,98 +1,183 @@
-# Python Project Starter Repository
+# Weather Vein
 
-This repository serves as a template demonstrating Python best practices for research projects. It includes:
+CSCI 5980 final project workspace for Prior Fitted Networks for contextual Bayesian
+optimization on the wake steering problem. The project studies how surrogate models
+and reinforcement learning methods can improve wind farm power production by steering
+upstream turbine wakes away from downstream turbines.
 
-- An example Python program (reading in data and plotting)
-- Command-line argument parsing ([argparse](https://docs.python.org/3/library/argparse.html))
-- Code style checking, aka "linting" (with [ruff](https://github.com/astral-sh/ruff))
-- Static type checking (with [mypy](https://mypy.readthedocs.io/))
-- Pre-commit hooks that run these checks automatically (with [pre-commit](https://pre-commit.com/))
-- Testing (with [pytest](https://docs.pytest.org/))
-- Continuous Integration (with [GitHub Actions](https://github.com/features/actions))
-- Package management (with [pip](https://pip.pypa.io/) and [pyproject.toml](https://pip.pypa.io/en/stable/reference/build-system/pyproject-toml/))
-- An open source license ([MIT](https://opensource.org/licenses/MIT))
+Team:
 
-## Features
+- Aleksei Rozanov
+- Kevin Babashov
+- Zeph Johnson
 
-### 1. Data Processing and Visualization
+## Project Context
 
-The main script ([starter_repo/plot_data.py](starter_repo/plot_data.py)) can be replaced with any code that you want to write.
+The current project uses WFCRL to evaluate wind farm control policies. In this setup,
+the controller chooses turbine yaw changes, and the simulator returns farm-level power
+and turbine-level measurements.
 
-Installation can be done as follows:
+Key context variables:
+
+- Wind speed
+- Wind direction
+- Turbine coordinates
+- Turbine yaw
+- Turbine-level wind and load measurements
+
+Current simulator focus:
+
+- FLORIS is the current working simulator.
+- FAST.Farm is the intended next simulator target if time permits.
+
+Current scenario framing:
+
+- Scenario 1: fixed wind speed of 8 m/s and fixed wind direction of 270 degrees.
+- Scenario 2: randomized train-time initial conditions, with wind speed sampled from a
+  Weibull distribution and wind direction sampled from a normal distribution; test-time
+  evaluation remains fixed at 8 m/s and 270 degrees.
+- Scenario 3: future expansion target if time permits.
+
+Methods under comparison:
+
+- Gaussian Process contextual Bayesian optimization
+- TabPFN
+- GraphPFN
+- PPO / RL baselines
+- Do-nothing and random baselines
+
+TabPFN note: the active notebook uses the hosted Prior Labs client
+`tabpfn_client.TabPFNRegressor` for reward/power regression. Store your token in
+Colab Secrets as `TABPFN_TOKEN`, enable notebook access, and run the notebook's
+TabPFN authentication cell before any `.fit()` call. If the token is missing or
+invalid, the notebook uses a clearly labeled `TabPFN-Fallback` sklearn surrogate
+so the rest of the FLORIS Scenario 2 pipeline can still run.
+
+## Repo Map
+
+- `CSCI_5980_notebooks/WFCRL_GraphPFN_TabPFN_V2.ipynb`: active GraphPFN and TabPFN
+  experiment notebook.
+- `CSCI_5980_notebooks/WFCRL_GraphPFN_TabPFN_Scenario1.ipynb`: Scenario 1 GraphPFN
+  and TabPFN workflow.
+- `CSCI_5980_notebooks/evaluate_scenarios.py`: Python runner that evaluates
+  Scenario 1 and Scenario 2 together on FLORIS and writes comparable CSV outputs.
+- `CSCI_5980_notebooks/GraphicalFailure_wfcrl.ipynb`: investigation of why raw graph
+  inputs fail with TabPFN.
+- `CSCI_5980_notebooks/WFCRL_GraphPFN_Synthetic.ipynb`: synthetic GraphPFN
+  experiments.
+- `wfcrl-env/`: WFCRL environment code, including FLORIS and FAST.Farm interfaces.
+- `CSCI_5980_notebooks/__simul__/floris/`: generated FLORIS simulation cases.
+
+## Setup
+
+The WFCRL environment package is kept in `wfcrl-env/`.
 
 ```bash
-# Install the package
-pip install .
-
-# Create a plot from the sample data
-python -m starter_repo.plot_data data/sample.csv year population --title "Population Growth" -o population.png
+pip install pandas scipy scikit-learn torch torch-geometric tabpfn-client python-dotenv
+cd wfcrl-env
+pip install -e .
 ```
 
-### 2. Testing
-
-Writing unit tests is a good way to ensure that your code behaves as expected, and you can write unit tests before you write the code that you want to test (aka "test-driven development"). Test files are located in the [tests/](tests/) directory.
-
-To run tests:
+To work with FAST.Farm, WFCRL expects the simulator dependencies to be available.
+From inside `wfcrl-env/`, the upstream setup path is:
 
 ```bash
-pip install ".[dev]"  # Install development dependencies
-pytest
+wfcrl-simulator fastfarm
+python examples/example_fastfarm.py
 ```
 
-### 3. Code Quality Tools
+## Running Scenario 1 and 2 Together
 
-This project uses several tools to maintain code quality:
+Use the Python runner when collecting final project results. It evaluates both
+Scenario 1 and Scenario 2 for each selected FLORIS layout and seed, then writes:
 
-#### Pre-commit Hooks
+- `CSCI_5980_notebooks/results/scenario_1_2_floris_results.csv`
+- `CSCI_5980_notebooks/results/scenario_1_2_floris_summary.csv`
+- `CSCI_5980_notebooks/results/method_counts.csv`
 
-We use [pre-commit](.pre-commit-config.yaml) with:
-
-- [Ruff](https://github.com/charliermarsh/ruff) for linting and formatting
-- [mypy](https://mypy.readthedocs.io/) for static type checking
-
-To set up pre-commit:
+Quick smoke test:
 
 ```bash
-pip install pre-commit
-pre-commit install
+python CSCI_5980_notebooks/evaluate_scenarios.py \
+  --layouts Turb3_Row1_Floris \
+  --seeds 0 \
+  --n-initial 2 \
+  --n-candidates 4 \
+  --max-steps 5 \
+  --graph-train-steps 1 \
+  --cpu \
+  --output-dir results_smoke
 ```
 
-### 4. Continuous Integration
+Full Kevin-branch FLORIS run:
 
-GitHub Actions workflows are set up for:
-
-- [Linting](.github/workflows/lint.yml): Runs pre-commit hooks (Ruff and mypy)
-- [Testing](.github/workflows/test.yml): Runs pytest on multiple Python versions
-
-
-## Contributing
-
-1. Fork the repository
-2. Install development dependencies: `pip install -e ".[dev]"`
-3. Install pre-commit hooks: `pre-commit install`
-4. Make your changes
-5. Run tests: `pytest`
-6. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-> **Note**: Without a license, the code is under exclusive copyright by default. This means no one can copy, distribute, or modify your work without facing potential legal consequences. Adding a license (like MIT) explicitly grants these permissions, making it clear how others can use your code.
-
-## Citation
-
-This was created by [Graham Neubig](https://phontron.com) primarily as an example for student researchers.
-
-One final thing: when you publish your research code, it's good to add a BibTeX entry like this to the paper (or just the repo) so people can cite it easily:
-
-```bibtex
-@misc{neubig2025starter,
-  author = {Graham Neubig},
-  title = {Python Project Starter Repository},
-  year = {2025},
-  publisher = {GitHub},
-  journal = {GitHub Repository},
-  howpublished = {\url{https://github.com/neubig/starter-repo}}
-}
+```bash
+python CSCI_5980_notebooks/evaluate_scenarios.py \
+  --layouts slide \
+  --seeds 0 1 2 \
+  --n-initial 32 \
+  --n-candidates 1024 \
+  --max-steps 150 \
+  --graph-train-steps 100
 ```
+
+If `TABPFN_TOKEN` is available in the environment, the runner uses the hosted
+Prior Labs TabPFN regressor. Otherwise it uses the same clearly labeled
+`TabPFN-Fallback` sklearn surrogate so the FLORIS sweep can still finish.
+
+## Actionables
+
+1. Keep the current documentation and notebook work on the `Kevin` branch. Once the
+   current rebase state is resolved, create or refresh a shared `dev` branch so graph
+   results can be merged into one cohesive codebase for Aryan to examine.
+2. Expand Kevin's GraphPFN and TabPFN work from Scenario 1 to Scenario 2.
+   Implemented in `CSCI_5980_notebooks/WFCRL_GraphPFN_TabPFN_V2.ipynb` for
+   FLORIS by training on randomized Scenario 2 contexts and evaluating on the
+   fixed 8 m/s, 270 degree test condition. The paired Scenario 1/2 evaluation
+   runner is `CSCI_5980_notebooks/evaluate_scenarios.py`.
+3. If time permits, switch the environment from FLORIS to FAST.Farm.
+4. If time permits, switch or extend the experiments to Scenario 3.
+5. Unify result collection across GP, TabPFN, GraphPFN, PPO, do-nothing, and random
+   baselines so final report figures are comparable.
+6. Prioritize final report and code work first, then the poster.
+7. Complete check-ins independently for April 13 and April 27. As of April 20, 2026,
+   the April 13 check-in is already past, and April 27 is the remaining check-in.
+
+## Future Work
+
+Aleksei:
+
+- Expand experiments to Scenario 3 after completing Scenario 2.
+
+Kevin:
+
+- Expand GraphPFN and TabPFN to Scenario 2. The FLORIS notebook path is now in
+  place; the next step is running the full layout/seed sweep and collecting CSV
+  outputs.
+- Work on switching the environment from FLORIS to FAST.Farm.
+
+Zeph:
+
+- Expand RL PPO to Scenarios 1 and 2.
+- Work on switching the environment to FAST.Farm and/or trying Scenario 3.
+
+Whole team:
+
+- Finish cohesive code and final report work before the poster.
+- Keep check-ins independent for April 13 and April 27.
+
+## Experiment Notes
+
+Scenario 1 GraphPFN and TabPFN results may underperform for several reasons:
+
+- The graph structure may be weak, incomplete, or mismatched to the wake dependency
+  structure.
+- Context size may be too small for stable in-context behavior.
+- Candidate ranking quality may limit yaw selection.
+- GraphPFN training priors may not transfer cleanly from synthetic graph structure to
+  WFCRL FLORIS layouts.
+
+Scenario 2 is especially important because randomized initial conditions make wind
+speed and wind direction true contextual variables. Contextual Bayesian optimization
+and PFN-style posterior prediction should be evaluated there before drawing final
+project conclusions.

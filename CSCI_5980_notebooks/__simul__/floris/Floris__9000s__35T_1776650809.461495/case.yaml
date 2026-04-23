@@ -1,0 +1,143 @@
+description: Base template for turbines using Gauss Curl Hybrid model
+farm:
+  layout_x:
+  - 3378.3280896
+  - 4347.000730399999
+  - 5287.63824580002
+  - 6245.1108866000095
+  - 7196.42677700001
+  - 8167.2210428
+  - 3900.5954734
+  - 4871.9464891999805
+  - 5812.30562940001
+  - 7721.61578559999
+  - 8675.33167620002
+  - 4425.78448199999
+  - 5359.743622199991
+  - 8214.491293600011
+  - 9173.842309599999
+  - 4924.781614799999
+  - 5879.854255599999
+  - 8733.28030220001
+  - 9684.317817600011
+  - 5464.9273735999905
+  - 6427.2000144
+  - 7378.794280199991
+  - 9287.30443639999
+  - 10234.620326
+  - 5977.03800720001
+  - 6904.0755223999895
+  - 7895.70491359999
+  - 9810.09344499998
+  - 10763.809336
+  - 6505.9486406
+  - 7463.42128139998
+  - 8404.5804216
+  - 9378.609812800001
+  - 10340.325703999999
+  - 11288.47672
+  layout_y:
+  - 6514.8637897997005
+  - 7132.538836799939
+  - 7762.2424016000205
+  - 8388.74596620019
+  - 9021.40187620011
+  - 9628.95309560009
+  - 5724.1606004003
+  - 6347.21651039973
+  - 6971.5962475998
+  - 8218.97485920013
+  - 8849.23076920029
+  - 4993.07617259966
+  - 5589.1227016002795
+  - 7463.8048780002
+  - 8094.06078799964
+  - 4167.17298319965
+  - 4786.1718573998105
+  - 6654.45403379988
+  - 7282.833771200049
+  - 3326.01275800027
+  - 3950.6686680000203
+  - 4584.64840519987
+  - 5819.22701679977
+  - 6468.93058160029
+  - 2533.2427767999598
+  - 3143.1939961997
+  - 3786.74521579973
+  - 5030.92382740013
+  - 5661.1797374003
+  - 1733.46341459983
+  - 2366.39549720015
+  - 2997.97523460024
+  - 3614.85028140031
+  - 4249.10619139984
+  - 4870.53358340008
+  turbine_type:
+  - nrel_5MW
+floris_version: v3.0.0
+flow_field:
+  air_density: 1.225
+  reference_wind_height: -1
+  turbulence_intensity: 0.06
+  wind_directions:
+  - 270
+  wind_shear: 0.12
+  wind_speeds:
+  - 8
+  wind_veer: 0.0
+logging:
+  console:
+    enable: true
+    level: WARNING
+  file:
+    enable: false
+    level: WARNING
+name: GCH
+solver:
+  turbine_grid_points: 3
+  type: turbine_grid
+wake:
+  enable_secondary_steering: true
+  enable_transverse_velocities: true
+  enable_yaw_added_recovery: true
+  model_strings:
+    combination_model: sosfs
+    deflection_model: gauss
+    turbulence_model: crespo_hernandez
+    velocity_model: gauss
+  wake_deflection_parameters:
+    gauss:
+      ad: 0.0
+      alpha: 0.58
+      bd: 0.0
+      beta: 0.077
+      dm: 1.0
+      ka: 0.38
+      kb: 0.004
+    jimenez:
+      ad: 0.0
+      bd: 0.0
+      kd: 0.05
+  wake_turbulence_parameters:
+    crespo_hernandez:
+      ai: 0.8
+      constant: 0.5
+      downstream: -0.32
+      initial: 0.1
+  wake_velocity_parameters:
+    cc:
+      a_f: 3.11
+      a_s: 0.179367259
+      alpha_mod: 1.0
+      b_f: -0.68
+      b_s: 0.0118889215
+      c_f: 2.41
+      c_s1: 0.0563691592
+      c_s2: 0.13290157
+    gauss:
+      alpha: 0.58
+      beta: 0.077
+      ka: 0.38
+      kb: 0.004
+    jensen:
+      we: 0.05
