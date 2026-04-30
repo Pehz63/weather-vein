@@ -12,26 +12,31 @@ Paper reference: arXiv:2501.13592, Table 5 (IPPO/MAPPO hyperparameters)
 | Clip coefficient | 0.2 | 0.2 | yes | |
 | Value loss coefficient | 0.5 | 0.5 | yes | |
 | Max gradient norm | 0.5 | 0.5 | yes | |
-| Hidden layers | (64, 64) | (128, 128) | no | Mine uses 2x wider layers |
+| Hidden layers | (64, 64) | (256, 256) | no | Mine uses 4x wider layers |
 | # steps between updates | 2048 | 2400 (16 envs x 150 steps) | no | Sample counts are similar but structure differs - see below |
 | Effective GAE horizon | 2048 | 150 | no | Paper's credit assignment spans up to 2048 steps; mine caps at 150 per episode |
 | Batch size | 2048 | 2400 | ~ | Similar count, but mine is 16 independent 150-step episodes concatenated, not one long rollout |
 | Minibatch size | 64 | 32 | no | Mine uses smaller minibatches |
 | # minibatches | 32 | 75 (2400 / 32) | no | Mine produces more batches per epoch |
 | Entropy bonus | not reported | 0.01 -> 0.001 (linear decay) | - | Not in paper; mine adds entropy regularization |
-| Reward signal | raw farm power | differential (actual - zero-yaw) / 20.0 | no | Major difference - see below |
+| Reward signal | raw farm power | differential (actual - zero-yaw) / 20.0 + terminal bonus + convergence penalty | no | Mine adds two extra shaping terms - see below |
 | Network architecture | shared (implied) | split actor/critic backbones | - | Paper does not specify; mine keeps gradients separate |
+| Observation space | wind + yaw (implied) | wind + yaw + normalized timestep t/T | - | Mine adds timestep so policy knows when to stop exploring |
 | Episode length (Sc.2) | T = 2048 | T = 150 | no | Paper uses much longer episodes for Sc.2; mine uses 150 (the Sc.1 default) |
-| Total training steps | 200k | ~151k (63 x 16 x 150) | ~ | Mine trains for slightly fewer steps |
+| Total training steps | 200k | ~480k (200 x 16 x 150) | ~ | Mine trains for ~2.4x more steps |
 
 ## Key Differences to Investigate
 
 1. **Episode length / GAE horizon**: The paper uses T = 2048 for Scenario 2, but the environment is initialized with `max_num_steps=150`. This is the most significant structural mismatch. It's not just a sample-count difference - 16 x 150-step episodes have the same number of gradient steps as one 2400-step rollout, but GAE can only propagate credit within each 150-step episode. The value function never sees consequences beyond step 150, whereas the paper's policy learns to reason 2048 steps ahead. Longer episodes also let the agent observe the wind condition for longer before committing to a yaw strategy.
 
-2. **Reward signal (differential vs raw)**: The paper trains on raw farm power. Mine pre-computes zero-yaw baseline trajectories for every training seed and subtracts them step-by-step: `reward = (actual_power - zero_yaw_power) / 20.0`. This has two effects: (1) it reduces variance by removing the wind-condition contribution to the reward, so PPO only sees the yaw-steering delta; (2) it changes what the value function learns - the paper's critic must predict absolute power, mine predicts only the marginal gain from steering. This means the paper's policy must implicitly learn that high wind = high reward regardless of yaw, while mine learns to isolate the controllable component. A side effect is that if yaw steering offers no benefit, the reward is near zero even in strong wind, which could make learning harder or easier depending on the environment.
+2. **Reward signal (differential + shaping vs raw)**: The paper trains on raw farm power. Mine uses three components: (1) differential reward `(actual - zero_yaw) / 20.0` to isolate the controllable yaw-steering gain; (2) a terminal bonus of `5x` the final-step differential, incentivizing the policy to find and hold the optimal yaw at episode end; (3) a convergence penalty `0.05 * (t/T)^2 * mean(|action|)` that grows quadratically through the episode, discouraging unnecessary yaw adjustments in the final steps.
 
-3. **Epochs per update (20 vs 10)**: More epochs risk overfitting to each rollout batch, but may speed learning. Could try halving to match the paper.
+3. **Observation space (12 vs 11 dims)**: A normalized timestep `t/T in [0, 1]` is appended to the observation vector. This lets the policy learn time-conditioned behavior - large yaw moves early, hold position late - which the shaping terms also encourage from the reward side.
 
-4. **Hidden layer width (128 vs 64)**: Larger network may help with the 11-dim observation space but adds parameters. The paper's (64, 64) is much smaller.
+4. **Hidden layer width (256 vs 64)**: Mine uses 4x wider hidden layers than the paper's (64, 64). The wider network has more capacity to represent the policy across the full wind condition space (speed 3-28 m/s, direction 0-360 deg).
 
-5. **Minibatch size (32 vs 64)**: Smaller minibatches mean noisier gradient estimates. Could double to match.
+5. **Total training steps (~480k vs 200k)**: Mine trains for ~2.4x more update cycles (200 vs the original 63), reaching ~480k total steps vs the paper's 200k. This gives the larger network and new reward signal more time to converge.
+
+6. **Epochs per update (20 vs 10)**: More epochs risk overfitting to each rollout batch, but may speed learning. Could try halving to match the paper.
+
+7. **Minibatch size (32 vs 64)**: Smaller minibatches mean noisier gradient estimates. Could double to match.
