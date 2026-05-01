@@ -8,7 +8,7 @@ import multiprocessing as mp
 import numpy as np
 
 
-def _env_worker(seed, pipe):
+def _env_worker(seed, pipe, env_id):
     """Worker process: creates its own env from a seed, serves commands over a Pipe.
 
     Defined at module level so spawn can import it by path - no closure, no pickling issues.
@@ -16,7 +16,7 @@ def _env_worker(seed, pipe):
     from wfcrl import environments as envs  # import inside worker after spawn
 
     e = envs.make(
-        "Turb3_Row1_Floris",
+        env_id,
         max_num_steps=150,
         controls={"yaw": (-45, 45, 5)},
         continuous_control=True,
@@ -48,15 +48,16 @@ class ParallelVecEnv:
     The API mirrors gymnasium VectorEnv: reset() and step() return batched arrays.
     """
 
-    def __init__(self, seeds):
+    def __init__(self, seeds, env_id):
         ctx = mp.get_context("spawn")
         self.n = len(seeds)
+        self.env_id = env_id
         self.pipes = []
         self.procs = []
 
         for seed in seeds:
             parent, child = ctx.Pipe()
-            proc = ctx.Process(target=_env_worker, args=(seed, child), daemon=True)
+            proc = ctx.Process(target=_env_worker, args=(seed, child, env_id), daemon=True)
             proc.start()
             child.close()  # parent doesn't need the child end
             assert parent.recv() == "ready", f"Worker with seed {seed} failed to start"
