@@ -1,0 +1,53 @@
+Skipping Turb_TCRWP (axial PFN cached)
+Skipping Turb3_Row1 (axial PFN cached)
+Skipping Turb6_Row2 (axial PFN cached)
+Skipping Turb16_Row5 (axial PFN cached)
+Skipping Turb32_Row5 (axial PFN cached)
+Skipping Ablaincourt (axial PFN cached)
+Skipping HornsRev1 (axial PFN cached)
+Skipping HornsRev2 (axial PFN cached)
+Skipping Ormonde (axial PFN cached)
+
+==================================================
+Layout: WMR_Floris
+==================================================
+  seed=27... Random seed set as 27
+  Axial early stop at epoch 10, best val loss: 2.4735
+AXIAL-PFN=475.6
+  seed=28... Random seed set as 28
+  Axial early stop at epoch 11, best val loss: 3.2966
+AXIAL-PFN=474.4
+  seed=29... Random seed set as 29
+  Axial early stop at epoch 13, best val loss: 2.7879
+AXIAL-PFN=474.8
+
+==================================================
+Layout: Turb2_Row1_Floris
+==================================================
+  seed=27... Random seed set as 27
+  Axial early stop at epoch 17, best val loss: 1.8206
+AXIAL-PFN=296.2
+  seed=28... Random seed set as 28
+AXIAL-PFN=296.6
+  seed=29... Random seed set as 29
+  Axial early stop at epoch 13, best val loss: 1.9850
+AXIAL-PFN=296.2
+Skipping Turb3_Row1 (axial PFN cached)
+
+==================================================
+Layout: Turb4_Row1_Floris
+==================================================
+  seed=27... Random seed set as 27
+AXIAL-PFN=205.4
+  seed=28... Random seed set as 28
+  Axial early stop at epoch 21, best val loss: 1.2557
+AXIAL-PFN=207.4
+  seed=29... Random seed set as 29
+AXIAL-PFN=199.2
+
+==================================================
+Layout: Turb5_Row1_Floris
+==================================================
+  seed=27... Random seed set as 27
+AXIAL-PFN=186.1
+  seed=28... Random seed set as 28
