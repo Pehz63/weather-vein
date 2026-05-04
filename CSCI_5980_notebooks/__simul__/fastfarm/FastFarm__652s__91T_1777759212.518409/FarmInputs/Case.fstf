@@ -1,0 +1,192 @@
+------- FAST.Farm for OpenFAST INPUT FILE -------------------------------------------------
+FAST.Farm     input         - file
+--- SIMULATION CONTROL ---
+False         Echo          - Echo input data to <RootName>.ech? (flag)
+FATAL         AbortLevel    - Error level when simulation should abort (string) {"WARNING", "SEVERE", "FATAL"}
+552           TMax          - Total run time (s) [>=0.0]
+True          UseSC         - Use a super controller? (flag)
+2             Mod_AmbWind   - Ambient wind model (-) (switch) {1: high-fidelity precursor in VTK format, 2: one InflowWind module, 3: multiple instances of InflowWind module}
+2             Mod_WaveField - Wave field handling (-) (switch) {1: use individual HydroDyn inputs without adjustment, 2: adjust wave phases based on turbine offsets from farm origin}
+0             Mod_SharedMooring - Shared mooring system model (switch) {0: None, 3=MoorDyn}}
+--- SUPER CONTROLLER --- [used only for UseSC=True]
+"../servo_dll/SC_DLL.dll" SC_FileName   - Name/location of the dynamic library {.dll [Windows] or .so [Linux]} containing the Super Controller algorithms (quoated string)
+--- SHARED MOORING SYSTEM --- [used only for Mod_SharedMoor>0]
+""            SharedMoorFile - Name of file containing shared mooring system input parameters (quoted string) [used only when Mod_SharedMooring > 0]
+0.04          DT_Mooring    - Time step for farm-level mooring coupling with each turbine (s) [used only when Mod_SharedMooring > 0]
+--- AMBIENT WIND: PRECURSOR IN VTK FORMAT --- [used only for Mod_AmbWind=1]
+3.0           DT_Low-VTK    - Time step for low -resolution wind data input files; will be used as the global FAST.Farm time step (s) [>0.0]
+0.1           DT_High-VTK   - Time step for high-resolution wind data input files (s) [>0.0]
+"unused"      WindFilePath  - Path name to VTK wind data files from precursor (string)
+False         ChkWndFiles   - Check all the ambient wind files for data consistency? (flag)
+--- AMBIENT WIND: INFLOWWIND MODULE --- [used only for Mod_AmbWind=2 or 3]
+3             DT_Low        - Time step for low -resolution wind data interpolation; will be used as the global FAST.Farm time step (s) [>0.0]
+0.1           DT_High       - Time step for high-resolution wind data interpolation (s) [>0.0]
+708           NX_Low        - Number of low -resolution spatial nodes in X direction for wind data interpolation (-) [>=2]
+1008          NY_Low        - Number of low -resolution spatial nodes in Y direction for wind data interpolation (-) [>=2]
+68            NZ_Low        - Number of low -resolution spatial nodes in Z direction for wind data interpolation (-) [>=2]
+201.0         X0_Low        - Origin of low -resolution spatial nodes in X direction for wind data interpolation (m)
+-5050.0       Y0_Low        - Origin of low -resolution spatial nodes in Y direction for wind data interpolation (m)
+0.0           Z0_Low        - Origin of low -resolution spatial nodes in Z direction for wind data interpolation (m)
+9.6           dX_Low        - Spacing of low -resolution spatial nodes in X direction for wind data interpolation (m) [>0.0]
+10.01         dY_Low        - Spacing of low -resolution spatial nodes in Y direction for wind data interpolation (m) [>0.0]
+10.147        dZ_Low        - Spacing of low -resolution spatial nodes in Z direction for wind data interpolation (m) [>0.0]
+32            NX_High       - Number of high-resolution spatial nodes in X direction for wind data interpolation (-) [>=2]
+16            NY_High       - Number of high-resolution spatial nodes in Y direction for wind data interpolation (-) [>=2]
+17            NZ_High       - Number of high-resolution spatial nodes in Z direction for wind data interpolation (-) [>=2]
+"InflowWind.dat" InflowFile    - Name of file containing InflowWind module input parameters (quoted string)
+--- WIND TURBINES ---
+91            NumTurbines   - Number of wind turbines (-) [>=1] [last 6 columns below used only for Mod_AmbWind=2 or 3]
+WT_X            WT_Y            WT_Z            WT_FASTInFile   X0_High         Y0_High         Z0_High         dX_High         dY_High         dZ_High        
+(m)             (m)             (m)             (string)        (m)             (m)             (m)             (m)             (m)             (m)            
+3.58669007e+03	1.99037304e+03	0	"FFTest_WT01.fst"	3.50820000e+03	1.90688800e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.03828368e+03	1.94544725e+03	0	"FFTest_WT02.fst"	2961	1.86684840e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+2.50270550e+03	1.89731248e+03	0	"FFTest_WT03.fst"	2.42340000e+03	1.81679880e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+1.95750616e+03	1.83955074e+03	0	"FFTest_WT04.fst"	1881	1.75673930e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+1.42192799e+03	1.79462495e+03	0	"FFTest_WT05.fst"	1.34340000e+03	1.71669970e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+8.73521590e+02	1.74969916e+03	0	"FFTest_WT06.fst"	7.96200000e+02	1.66665010e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.41150469e+02	1.70156438e+03	0	"FFTest_WT07.fst"	2.63400000e+02	1.61660060e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.54820541e+03	2.66746891e+03	0	"FFTest_WT08.fst"	3.46980000e+03	2.58756190e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.00300607e+03	2.65784196e+03	0	"FFTest_WT09.fst"	2.92740000e+03	2.57755200e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+2.45780673e+03	2.64821500e+03	0	"FFTest_WT10.fst"	2.38020000e+03	2.56754210e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+1.92222856e+03	2.62254312e+03	0	"FFTest_WT11.fst"	1.84260000e+03	2.53751240e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+1.38023627e+03	2.61612515e+03	0	"FFTest_WT12.fst"	1.30020000e+03	2.53751240e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+8.31829876e+02	2.61291617e+03	0	"FFTest_WT13.fst"	753	2.52750250e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+2.86630535e+02	2.60008023e+03	0	"FFTest_WT14.fst"	2.10600000e+02	2.51749260e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.55141247e+03	3.37665463e+03	0	"FFTest_WT15.fst"	3.47460000e+03	3.29826560e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.02224840e+03	3.38307260e+03	0	"FFTest_WT16.fst"	2.94660000e+03	3.29826560e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+2.47384201e+03	3.41195347e+03	0	"FFTest_WT17.fst"	2.39460000e+03	3.32829530e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+1.92864267e+03	3.44083434e+03	0	"FFTest_WT18.fst"	1.85220000e+03	3.35832510e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+1.38344333e+03	3.45687926e+03	0	"FFTest_WT19.fst"	1305	3.37834490e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+8.38243986e+02	3.48896911e+03	0	"FFTest_WT20.fst"	7.62600000e+02	3.40837460e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+2.93044645e+02	3.49217810e+03	0	"FFTest_WT21.fst"	2.15400000e+02	3.40837460e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.60913946e+03	4.05695949e+03	0	"FFTest_WT22.fst"	3.53220000e+03	3.97893950e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.06394012e+03	4.10509426e+03	0	"FFTest_WT23.fst"	2985	4.02898910e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+2.53156900e+03	4.17248295e+03	0	"FFTest_WT24.fst"	2.45220000e+03	4.08904860e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+1.98636965e+03	4.23987164e+03	0	"FFTest_WT25.fst"	1.90980000e+03	4.15911790e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+1.44437737e+03	4.28800642e+03	0	"FFTest_WT26.fst"	1.36740000e+03	4.20916750e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+9.08799194e+02	4.35539511e+03	0	"FFTest_WT27.fst"	8.29800000e+02	4.27923690e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.63599854e+02	4.40352988e+03	0	"FFTest_WT28.fst"	2.87400000e+02	4.31927650e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.70855816e+03	4.74047332e+03	0	"FFTest_WT29.fst"	3.62820000e+03	4.65961350e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.16335882e+03	4.84636984e+03	0	"FFTest_WT30.fst"	3.08580000e+03	4.76972250e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+2.62778064e+03	4.93301244e+03	0	"FFTest_WT31.fst"	2.54820000e+03	4.84980180e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+2.10182363e+03	5.01644605e+03	0	"FFTest_WT32.fst"	2025	4.93989100e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+1.56303840e+03	5.12555154e+03	0	"FFTest_WT33.fst"	1.48740000e+03	5.03999010e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+1.01783906e+03	5.21219414e+03	0	"FFTest_WT34.fst"	9.40200000e+02	5.13007930e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+4.88674997e+02	5.31167268e+03	0	"FFTest_WT35.fst"	4.12200000e+02	5.23017840e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.84966858e+03	5.42719615e+03	0	"FFTest_WT36.fst"	3.77220000e+03	5.35029730e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.31088335e+03	5.55234657e+03	0	"FFTest_WT37.fst"	3.23460000e+03	5.47041630e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+2.77851223e+03	5.67428801e+03	0	"FFTest_WT38.fst"	2.70180000e+03	5.59053520e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+2.24934816e+03	5.80906538e+03	0	"FFTest_WT39.fst"	2169	5.73067390e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+1.72018410e+03	5.93421580e+03	0	"FFTest_WT40.fst"	1641	5.85079290e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+1.19102003e+03	6.05615724e+03	0	"FFTest_WT41.fst"	1113	5.97091180e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+6.71477129e+02	6.17809868e+03	0	"FFTest_WT42.fst"	5.94600000e+02	6.10104060e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+4.01964249e+03	6.08824709e+03	0	"FFTest_WT43.fst"	3.94020000e+03	6.01095140e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.49689253e+03	6.24548736e+03	0	"FFTest_WT44.fst"	3417	6.16110010e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+2.97734963e+03	6.41235459e+03	0	"FFTest_WT45.fst"	2.89860000e+03	6.33126860e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+2.45459968e+03	6.58243081e+03	0	"FFTest_WT46.fst"	2.37540000e+03	6.50143710e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+1.93826383e+03	6.74288006e+03	0	"FFTest_WT47.fst"	1.86180000e+03	6.66159560e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+1.42834210e+03	6.90653831e+03	0	"FFTest_WT48.fst"	1.34820000e+03	6.82175420e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+9.05592139e+02	7.06377858e+03	0	"FFTest_WT49.fst"	8.29800000e+02	6.98191280e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+4.24092928e+03	6.75571601e+03	0	"FFTest_WT50.fst"	4161	6.67160560e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.73100754e+03	6.94504613e+03	0	"FFTest_WT51.fst"	3.65220000e+03	6.86179390e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.23712108e+03	7.14079422e+03	0	"FFTest_WT52.fst"	3.15780000e+03	7.06199210e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+2.72719935e+03	7.31728841e+03	0	"FFTest_WT53.fst"	2649	7.23216060e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+2.21407056e+03	7.51945447e+03	0	"FFTest_WT54.fst"	2.13540000e+03	7.44236870e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+1.70414882e+03	7.70878460e+03	0	"FFTest_WT55.fst"	1.62660000e+03	7.63255700e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+1.19743414e+03	7.90774168e+03	0	"FFTest_WT56.fst"	1.11780000e+03	7.82274530e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+4.51352895e+03	7.39109507e+03	0	"FFTest_WT57.fst"	4.43460000e+03	7.31223980e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+4.01322838e+03	7.60930606e+03	0	"FFTest_WT58.fst"	3.93540000e+03	7.53245790e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.51613486e+03	7.83714400e+03	0	"FFTest_WT59.fst"	3.43620000e+03	7.75267590e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.02866251e+03	8.07460891e+03	0	"FFTest_WT60.fst"	2.95140000e+03	7.99291380e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+2.53477605e+03	8.28640193e+03	0	"FFTest_WT61.fst"	2457	8.20312190e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+2.03768253e+03	8.52065784e+03	0	"FFTest_WT62.fst"	1.95780000e+03	8.44335980e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+1.55021018e+03	8.75170477e+03	0	"FFTest_WT63.fst"	1473	8.67358770e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+4.82461328e+03	7.99438428e+03	0	"FFTest_WT64.fst"	4.74660000e+03	7.91283450e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+4.34034798e+03	8.27035700e+03	0	"FFTest_WT65.fst"	4.26180000e+03	8.19311200e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.85608269e+03	8.52065784e+03	0	"FFTest_WT66.fst"	3777	8.44335980e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.37823150e+03	8.78700361e+03	0	"FFTest_WT67.fst"	3.30180000e+03	8.70361740e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+2.90358737e+03	9.03409547e+03	0	"FFTest_WT68.fst"	2.82660000e+03	8.95386520e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+2.43215029e+03	9.27476935e+03	0	"FFTest_WT69.fst"	2.35620000e+03	9.19410310e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+1.95429911e+03	9.55074208e+03	0	"FFTest_WT70.fst"	1.87620000e+03	9.47438060e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+5.17097521e+03	8.59767349e+03	0	"FFTest_WT71.fst"	5.09220000e+03	8.51342910e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+4.70274519e+03	8.88969113e+03	0	"FFTest_WT72.fst"	4.62660000e+03	8.81372650e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+4.25375750e+03	9.16887284e+03	0	"FFTest_WT73.fst"	4.17540000e+03	9.08399410e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.78873453e+03	9.45126354e+03	0	"FFTest_WT74.fst"	3.70980000e+03	9.37428150e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.33333273e+03	9.74328119e+03	0	"FFTest_WT75.fst"	3.25380000e+03	9.66456890e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+2.86830976e+03	1.00288809e+04	0	"FFTest_WT76.fst"	2.78820000e+03	9.94484640e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+2.40328680e+03	1.03144806e+04	0	"FFTest_WT77.fst"	2.32740000e+03	1.02351338e+04	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+5.56223592e+03	9.18170878e+03	0	"FFTest_WT78.fst"	5.48580000e+03	9.10401390e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+5.11966233e+03	9.48335339e+03	0	"FFTest_WT79.fst"	5.03940000e+03	9.40431120e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+4.67388170e+03	9.80425190e+03	0	"FFTest_WT80.fst"	4.59780000e+03	9.72462830e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+4.23130811e+03	1.01315684e+04	0	"FFTest_WT81.fst"	4.15140000e+03	1.00549554e+04	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.79835570e+03	1.04364220e+04	0	"FFTest_WT82.fst"	3.71940000e+03	1.03552527e+04	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.35578211e+03	1.07637385e+04	0	"FFTest_WT83.fst"	3.27780000e+03	1.06855798e+04	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+2.91000148e+03	1.10846370e+04	0	"FFTest_WT84.fst"	2.83140000e+03	1.10058969e+04	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+5.98877422e+03	9.72081829e+03	0	"FFTest_WT85.fst"	5913	9.64454910e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+5.56544297e+03	1.00641797e+04	0	"FFTest_WT86.fst"	5.48580000e+03	9.98488600e+03	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+5.13890466e+03	1.04075411e+04	0	"FFTest_WT87.fst"	5.05860000e+03	1.03252230e+04	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+4.72519458e+03	1.07509025e+04	0	"FFTest_WT88.fst"	4.64580000e+03	1.06655600e+04	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+4.30507038e+03	1.10942639e+04	0	"FFTest_WT89.fst"	4.22820000e+03	1.10159068e+04	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.88173913e+03	1.14536703e+04	0	"FFTest_WT90.fst"	3.80580000e+03	1.13762636e+04	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+3.45520082e+03	1.18002407e+04	0	"FFTest_WT91.fst"	3.37860000e+03	1.17166006e+04	0	4.80000000e+00	1.00099000e+01	1.01471000e+01
+--- WAKE DYNAMICS ---
+1             Mod_Wake      - Switch between wake formulations {1:Polar, 2:Curl, 3:Cartesian} (-) (switch)
+5.0           dr            - Radial increment of radial finite-difference grid (m) [>0.0]
+40            NumRadii      - Number of radii in the radial finite-difference grid (-) [>=2]
+136           NumPlanes     - Number of wake planes (-) [>=2]
+0.17          f_c           - Cutoff (corner) frequency of the low-pass time-filter for the wake advection, deflection, and meandering model [recommended=1.28*U0/R] (Hz) [>0.0] or DEFAULT [DEFAULT=12.5/R, R estimated from dr and NumRadii, not recommended]
+DEFAULT       C_HWkDfl_O    - Calibrated parameter in the correction for wake deflection defining the horizontal offset at the rotor (m ) or DEFAULT [DEFAULT= 0.0 ]
+DEFAULT       C_HWkDfl_OY   - Calibrated parameter in the correction for wake deflection defining the horizontal offset at the rotor scaled with yaw error (m/deg) or DEFAULT [DEFAULT= 0.0 if Mod_Wake is 2, 0.3 otherwise]
+DEFAULT       C_HWkDfl_x    - Calibrated parameter in the correction for wake deflection defining the horizontal offset scaled with downstream distance (- ) or DEFAULT [DEFAULT= 0.0 ]
+DEFAULT       C_HWkDfl_xY   - Calibrated parameter in the correction for wake deflection defining the horizontal offset scaled with downstream distance and yaw error (1/deg) or DEFAULT [DEFAULT= 0.0 if Mod_Wake is 2, -0.004 otherwise]
+DEFAULT       C_NearWake    - Calibrated parameter for the near-wake correction (-) [>1.0 and <2.5] or DEFAULT [DEFAULT=1.8]
+DEFAULT       k_vAmb        - Calibrated parameter for the influence of ambient turbulence in the eddy viscosity (-) [>=0.0] or DEFAULT [DEFAULT=0.05 ]
+DEFAULT       k_vShr        - Calibrated parameter for the influence of the shear layer in the eddy viscosity (-) [>=0.0] or DEFAULT [DEFAULT=0.016]
+DEFAULT       C_vAmb_DMin   - Calibrated parameter in the eddy viscosity filter function for ambient turbulence defining the transitional diameter fraction between the minimum and exponential regions (-) [>=0.0 ] or DEFAULT [DEFAULT= 0.0 ]
+DEFAULT       C_vAmb_DMax   - Calibrated parameter in the eddy viscosity filter function for ambient turbulence defining the transitional diameter fraction between the exponential and maximum regions (-) [> C_vAmb_DMin ] or DEFAULT [DEFAULT= 1.0 ]
+DEFAULT       C_vAmb_FMin   - Calibrated parameter in the eddy viscosity filter function for ambient turbulence defining the value in the minimum region (-) [>=0.0 and <=1.0] or DEFAULT [DEFAULT= 1.0 ]
+DEFAULT       C_vAmb_Exp    - Calibrated parameter in the eddy viscosity filter function for ambient turbulence defining the exponent in the exponential region (-) [> 0.0 ] or DEFAULT [DEFAULT= 0.01]
+DEFAULT       C_vShr_DMin   - Calibrated parameter in the eddy viscosity filter function for the shear layer defining the transitional diameter fraction between the minimum and exponential regions (-) [>=0.0 ] or DEFAULT [DEFAULT= 3.0 ]
+DEFAULT       C_vShr_DMax   - Calibrated parameter in the eddy viscosity filter function for the shear layer defining the transitional diameter fraction between the exponential and maximum regions (-) [> C_vShr_DMin ] or DEFAULT [DEFAULT=25.0 ]
+DEFAULT       C_vShr_FMin   - Calibrated parameter in the eddy viscosity filter function for the shear layer defining the value in the minimum region (-) [>=0.0 and <=1.0] or DEFAULT [DEFAULT= 0.2 ]
+DEFAULT       C_vShr_Exp    - Calibrated parameter in the eddy viscosity filter function for the shear layer defining the exponent in the exponential region (-) [> 0.0 ] or DEFAULT [DEFAULT= 0.1 ]
+DEFAULT       Mod_WakeDiam  - Wake diameter calculation model (-) (switch) {1: rotor diameter, 2: velocity based, 3: mass-flux based, 4: momentum-flux based} or DEFAULT [DEFAULT=1]
+DEFAULT       C_WakeDiam    - Calibrated parameter for wake diameter calculation (-) [>0.0 and <0.99] or DEFAULT [DEFAULT=0.95] [unused for Mod_WakeDiam=1]
+DEFAULT       Mod_Meander   - Spatial filter model for wake meandering (-) (switch) {1: uniform, 2: truncated jinc, 3: windowed jinc} or DEFAULT [DEFAULT=3]
+DEFAULT       C_Meander     - Calibrated parameter for wake meandering (-) [>=1.0] or DEFAULT [DEFAULT=1.9]
+--- CURLED-WAKE PARAMETERS [only used if Mod_Wake=2 or 3] ---
+DEFAULT       Swirl         - Switch to include swirl velocities in wake (-) (switch) [DEFAULT=TRUE]
+DEFAULT       k_VortexDecay - Vortex decay constant for curl (-) [DEFAULT=0]
+DEFAULT       NumVortices   - The number of vortices in the curled wake model (-) [DEFAULT=100]
+DEFAULT       sigma_D       - The width of the vortices in the curled wake model non-dimesionalized by rotor diameter (-) [DEFAULT=0.2]
+DEFAULT       FilterInit    - Switch to filter the initial wake plane deficit and select the number of grid points for the filter {0: no filter, 1: filter of size 1} or DEFAULT [DEFAULT=1] (switch)
+DEFAULT       k_vCurl       - Calibrated parameter for scaling the eddy viscosity in the curled-wake model (-) [>=0] or DEFAULT [DEFAULT=2.0 ]
+DEFAULT       Mod_Projection - Switch to select how the wake plane velocity is projected in AWAE {1: keep all components, 2: project against plane normal} or DEFAULT [DEFAULT=1: if Mod_Wake is 1 or 3, or DEFAULT=2: if Mod_Wake is 2] (switch)
+--- VISUALIZATION ---
+False         WrDisWind     - Write low- and high-resolution disturbed wind data to <RootName>.Low.Dis.t<n>.vtk etc.? (flag)
+0             NOutDisWindXY - Number of XY planes for output of disturbed wind data across the low-resolution domain to <RootName>.Low.DisXY<n_out>.t<n>.vtk (-) [0 to 99]
+90.0          OutDisWindZ   - Z coordinates of XY planes for output of disturbed wind data across the low-resolution domain (m) [1 to NOutDisWindXY] [unused for NOutDisWindXY=0]
+0             NOutDisWindYZ - Number of YZ planes for output of disturbed wind data across the low-resolution domain to <RootName>/Low.DisYZ<n_out>.t<n>.vtk (-) [0 to 99]
+63.0, 441.0   OutDisWindX   - X coordinates of YZ planes for output of disturbed wind data across the low-resolution domain (m) [1 to NOutDisWindYZ] [unused for NOutDisWindYZ=0]
+0             NOutDisWindXZ - Number of XZ planes for output of disturbed wind data across the low-resolution domain to <RootName>/Low.DisXZ<n_out>.t<n>.vtk (-) [0 to 99]
+0.0           OutDisWindY   - Y coordinates of XZ planes for output of disturbed wind data across the low-resolution domain (m) [1 to NOutDisWindXZ] [unused for NOutDisWindXZ=0]
+3             WrDisDT       - Time step for disturbed wind visualization output (s) [>0.0] or DEFAULT [DEFAULT=DT_Low or DT_Low-VTK] [unused for WrDisWind=False and NOutDisWindXY=NOutDisWindYZ=NOutDisWindXZ=0]
+--- OUTPUT ---
+False         SumPrint      - Print summary data to <RootName>.sum? (flag)
+99999.9       ChkptTime     - Amount of time between creating checkpoint files for potential restart (s) [>0.0]
+0.0           TStart        - Time to begin tabular output (s) [>=0.0]
+1             OutFileFmt    - Format for tabular (time-marching) output file (switch) {1: text file [<RootName>.out], 2: binary file [<RootName>.outb], 3: both}
+True          TabDelim      - Use tab delimiters in text tabular output file? (flag) {uses spaces if False}
+"ES10.3E2"    OutFmt        - Format used for text tabular output, excluding the time channel. Resulting field should be 10 characters. (quoted string)
+DEFAULT       OutAllPlanes  - Output all wake planes at all time steps. [DEFAULT=False]
+7             NOutRadii     - Number of radial nodes for wake output for an individual rotor (-) [0 to 20]
+0, 2, 5, 11, 17, 21, 39 OutRadii      - List of radial nodes for wake output for an individual rotor (-) [1 to NOutRadii] [unused for NOutRadii=0]
+1             NOutDist      - Number of downstream distances for wake output for an individual rotor (-) [0 to 9 ]
+63.0          OutDist       - List of downstream distances for wake output for an individual rotor (m) [1 to NOutDist ] [unused for NOutDist =0]
+0             NWindVel      - Number of points for wind output (-) [0 to 9]
+0.0           WindVelX      - List of coordinates in the X direction for wind output (m) [1 to NWindVel] [unused for NWindVel=0]
+0.0           WindVelY      - List of coordinates in the Y direction for wind output (m) [1 to NWindVel] [unused for NWindVel=0]
+90.0          WindVelZ      - List of coordinates in the Z direction for wind output (m) [1 to NWindVel] [unused for NWindVel=0]
+ OutList The next line(s) contains a list of output parameters.  See OutListParameters.xlsx for a listing of available output channels (quoted string)
+END
+---------------------------------------------------------------------------------------

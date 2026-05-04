@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "/opt/homebrew/bin/mpiexec",
+    "-n",
+    "1",
+    "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+    "-m",
+    "ipykernel_launcher",
+    "-f",
+    "{connection_file}"
+  ],
+  "display_name": "WFCRL Interface",
+  "language": "python",
+  "metadata": {
+    "debugger": true
+  },
+  "env": {
+    "I_MPI_SPAWN": "on",
+    "OMPI_ALLOW_RUN_AS_ROOT": "1",
+    "OMPI_ALLOW_RUN_AS_ROOT_CONFIRM": "1",
+    "OMPI_MCA_rmaps_base_oversubscribe": "1",
+    "OMPI_MCA_btl": "tcp,self",
+    "PATH": "/opt/homebrew/Caskroom/miniforge/base/envs/minnelove/bin:/opt/homebrew/bin:/opt/homebrew/Caskroom/miniforge/base/bin:/Users/kevinbabashov/.codex/tmp/arg0/codex-arg0lbG678:/Users/kevinbabashov/.gem/ruby/3.4.1/bin:/Users/kevinbabashov/.rubies/ruby-3.4.1/lib/ruby/gems/3.4.0/bin:/Users/kevinbabashov/.rubies/ruby-3.4.1/bin:/opt/homebrew/sbin:/Library/Frameworks/Python.framework/Versions/3.12/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/Users/kevinbabashov/Library/Application Support/JetBrains/Toolbox/scripts:/Applications/Codex.app/Contents/Resources",
+    "FASTFARM_EXECUTABLE": "/opt/homebrew/Caskroom/miniforge/base/bin/FAST.Farm"
+  }
+}

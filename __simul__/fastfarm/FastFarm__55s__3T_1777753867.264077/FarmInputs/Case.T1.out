@@ -1,0 +1,19 @@
+
+Predictions were generated on 02-May-2026 at 15:31:08 using OpenFAST, compiled as a 64-bit application using single precision at commit v3.5.3-dirty
+ linked with  NWTC Subroutine Library; ElastoDyn; InflowWind; AeroDyn; ServoDyn
+
+Description from the FAST input file: FAST          Certification - Test #26: NREL 5.0 MW Baseline Wind Turbine (Onshore)
+
+Time	YawPzn	YawVzn	BlPitchC1	BlPitchC2	BlPitchC3	GenPwr	GenTq
+(s)	(deg)	(deg/s)	(deg)	(deg)	(deg)	(kW)	(kN-m)
+    0.0000	 0.000E+00	 0.000E+00	 0.000E+00	 0.000E+00	 0.000E+00	 1.682E+03	 1.949E+01
+    3.0000	 6.776E-04	-5.163E-03	 0.000E+00	 0.000E+00	 0.000E+00	 1.605E+03	 1.891E+01
+    6.0000	 1.814E-03	 3.770E-03	 0.000E+00	 0.000E+00	 0.000E+00	 1.667E+03	 1.934E+01
+    9.0000	 3.570E-06	 6.500E-03	 0.000E+00	 0.000E+00	 0.000E+00	 1.687E+03	 1.950E+01
+   12.0000	-1.534E-03	 6.361E-04	 0.000E+00	 0.000E+00	 0.000E+00	 1.693E+03	 1.957E+01
+   15.0000	 1.100E-03	-5.712E-03	 0.000E+00	 0.000E+00	 0.000E+00	 1.697E+03	 1.961E+01
+   18.0000	 9.490E-04	-2.980E-03	 0.000E+00	 0.000E+00	 0.000E+00	 1.701E+03	 1.963E+01
+   21.0000	 1.656E-05	 5.309E-03	 0.000E+00	 0.000E+00	 0.000E+00	 1.703E+03	 1.965E+01
+   24.0000	 8.208E-04	 9.644E-04	 0.000E+00	 0.000E+00	 0.000E+00	 1.704E+03	 1.966E+01
+   27.0000	-2.924E-04	-2.987E-03	 0.000E+00	 0.000E+00	 0.000E+00	 1.705E+03	 1.967E+01
+   30.0000	 2.122E-04	 1.490E-03	 0.000E+00	 0.000E+00	 0.000E+00	 1.706E+03	 1.968E+01
