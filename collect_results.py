@@ -21,10 +21,18 @@ import pandas as pd
 # ---------------------------------------------------------------------------
 
 REPRESENTATIVE_ENVS = [
+    "Turb_TCRWP_Floris",
+    "Turb1_Row1_Floris",
+    "Turb2_Row1_Floris",
     "Turb3_Row1_Floris",
+    "Turb6_Row2_Floris",
     "Turb16_Row5_Floris",
+    "Turb32_Row5_Floris",
     "Ablaincourt_Floris",
     "HornsRev1_Floris",
+    "HornsRev2_Floris",
+    "Ormonde_Floris",
+    "WMR_Floris",
 ]
 
 METHOD_COLORS = {
@@ -171,15 +179,15 @@ def load_kevin_results() -> pd.DataFrame:
 
 def _parse_zeph_summary_text(text: str) -> pd.DataFrame:
     """
-    Parse the truncated DataFrame repr from Zeph's Cell 49.
-    Block 1: index  env_id  status  n_turbines  ppo_mean  ppo_std
-    Block 2: index  baseline_mean  baseline_std  gain_pct  simulator
+    Parse the DataFrame repr from Zeph's summary cell.
+    Block 1: index  env_id  status  n_turbines  ppo_mean  ppo_std  baseline_mean
+    Block 2: index  baseline_std  gain_pct  simulator
     """
     row1_re = re.compile(
-        r"^\s*(\d+)\s+(\S+_Floris)\s+(ok|error)\s+(\d+)\s+([\d.]+)\s+([\d.]+)"
+        r"^\s*(\d+)\s+(\S+_Floris)\s+(ok|error)\s+(\d+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)"
     )
     row2_re = re.compile(
-        r"^\s*(\d+)\s+([\d.]+)\s+([\d.]+)\s+(-?[\d.]+)\s+\S+"
+        r"^\s*(\d+)\s+([\d.eE+-]+)\s+(-?[\d.eE+-]+)\s+\S+"
     )
 
     block1 = {}
@@ -187,25 +195,25 @@ def _parse_zeph_summary_text(text: str) -> pd.DataFrame:
     in_block2 = False
 
     for line in text.splitlines():
-        if "baseline_mean" in line:
+        if "baseline_std" in line:
             in_block2 = True
             continue
         if not in_block2:
             m = row1_re.match(line)
             if m:
                 block1[int(m.group(1))] = {
-                    "env_id":     m.group(2),
-                    "status":     m.group(3),
-                    "ppo_mean":   float(m.group(5)),
-                    "ppo_std":    float(m.group(6)),
+                    "env_id":        m.group(2),
+                    "status":        m.group(3),
+                    "ppo_mean":      float(m.group(5)),
+                    "ppo_std":       float(m.group(6)),
+                    "baseline_mean": float(m.group(7)),
                 }
         else:
             m = row2_re.match(line)
             if m:
                 block2[int(m.group(1))] = {
-                    "baseline_mean": float(m.group(2)),
-                    "baseline_std":  float(m.group(3)),
-                    "gain_pct":      float(m.group(4)),
+                    "baseline_std": float(m.group(2)),
+                    "gain_pct":     float(m.group(3)),
                 }
 
     if not block1:
@@ -290,7 +298,7 @@ def make_bar_chart(df: pd.DataFrame, out_path: str) -> None:
     scenarios  = ["Scenario 1", "Scenario 2"]
     methods    = ["GP", "TabPFN", "GraphPFN", "PPO"]
     envs       = REPRESENTATIVE_ENVS
-    env_labels = [e.replace("_Floris", "").replace("_", "\n") for e in envs]
+    env_labels = [e.replace("_Floris", "").replace("_", " ") for e in envs]
 
     fig, axes = plt.subplots(1, len(scenarios), figsize=(14, 5), sharey=False)
     fig.suptitle(
@@ -325,7 +333,7 @@ def make_bar_chart(df: pd.DataFrame, out_path: str) -> None:
         ax.axhline(0, color="black", linewidth=0.8, linestyle="--")
         ax.set_title(scenario, fontsize=11)
         ax.set_xticks(x)
-        ax.set_xticklabels(env_labels, fontsize=9)
+        ax.set_xticklabels(env_labels, fontsize=9, rotation=45, ha="right")
         ax.set_ylabel("Gain over Do-Nothing (%)")
         ax.grid(axis="y", linestyle=":", alpha=0.5)
 
