@@ -44,7 +44,7 @@ All three developers used `wind_direction=270°` (westerly, aligned perpendicula
 | Kevin | TabPFN | 32 context samples per run | TabPFN API (cloud inference) |
 | Kevin | GraphPFN | 32 context samples per run | GAT v2, 2 layers × 2 heads; 1024 candidates searched |
 | Kevin | Random | — | Uniform yaw ∈ [−40°, 40°] per turbine |
-| Zeph | PPO | ~151 k steps per env (63 updates × 16 rollouts × 150 steps) | lr 3e-4→1e-5; clip ε=0.2; hidden 128 (Sc1) / 256 (Sc2); Sc2 warm-starts from Sc1 checkpoint |
+| Zeph | PPO | ~151 k steps per env (63 updates × 16 rollouts × 150 steps) | lr 3e-4→1e-5; clip ε=0.2; hidden 128 (Sc1) / 256 (Sc2); Sc2 warm-starts from Sc1 checkpoint; greedy evaluation |
 | aleksei | GP | 500 simulation samples | Matern kernel (ν=0.5), ARD; Adam optimizer |
 | aleksei | TabPFN | 1 000 simulation samples | Nelder-Mead optimization, 40 iterations |
 | aleksei | PFN4BO / KG-PFN | 100 000 simulation samples | Transformer 512–1024 dim; 50-bucket discretized targets |

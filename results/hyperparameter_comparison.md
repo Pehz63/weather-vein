@@ -155,6 +155,7 @@ the full comparison against the WFCRL reference paper (arXiv:2501.13592, Table 5
 | TERMINAL\_SCALE | 5.0 | 5.0 | — |
 | CONVERGENCE\_COEF | 0.05 | 0.05 | — |
 | Warm-start from Sc1 checkpoint | — | Yes (LOAD\_CHECKPOINT=True) | — |
+| Inference action selection | greedy (actor\_mean, no sampling) | greedy (actor\_mean, no sampling) | — |
 | Approximate total env steps | ~151 k | ~480 k | 200 k |
 
 ---
