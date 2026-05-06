@@ -32,7 +32,4 @@ ENV/
 *.swo
 
 # Project specific
-*.png
-*.csv
-!data/sample.csv
 .env
