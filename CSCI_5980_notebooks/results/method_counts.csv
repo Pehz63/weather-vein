@@ -1,0 +1,11 @@
+scenario,method,count
+Scenario 1,Do-Nothing,60
+Scenario 1,GP,60
+Scenario 1,GraphPFN,60
+Scenario 1,Random,60
+Scenario 1,TabPFN-Fallback,60
+Scenario 2,Do-Nothing,60
+Scenario 2,GP,60
+Scenario 2,GraphPFN,60
+Scenario 2,Random,60
+Scenario 2,TabPFN-Fallback,60
