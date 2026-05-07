@@ -40,18 +40,6 @@ reward and selecting promising yaw configurations. Graph-based and axial variant
 are included to better represent turbine-to-turbine wake structure and transfer
 across layouts with different numbers of turbines.
 
-## Repository Structure
-
-- `CSCI_5980_notebooks/`: experiment notebooks and result-generation files
-- `CSCI_5980_notebooks/results/`: CSVs, figures, and tables used in analysis
-- `CSCI_5980_notebooks/evaluate_scenarios.py`: script for running comparable
-  FLORIS scenario evaluations
-- `wfcrl-env/`: local WFCRL environment code and simulator interfaces
-- `kernel-wfcrl/`: Jupyter kernel configuration used for FAST.Farm experiments
-- `.github/workflows/`: GitHub Actions for linting and testing
-- `pyproject.toml`: project metadata and development tool configuration
-- `LICENSE`: MIT license
-
 ## Setup
 
 Create and activate a Python environment:
@@ -109,7 +97,7 @@ steps.
 
 ## Results
 
-Final result files are stored in `CSCI_5980_notebooks/results/`. These include
+Final result files are stored in `.../results/`. These include
 CSV summaries and bar plots comparing episode return and improvement over the
 do-nothing baseline.
 
@@ -134,13 +122,6 @@ Install development dependencies when working on scripts or package code:
 
 ```bash
 pip install -e ".[dev]"
-```
-
-Run tests and quality checks with:
-
-```bash
-pytest
-pre-commit run --all-files
 ```
 
 ## Team
