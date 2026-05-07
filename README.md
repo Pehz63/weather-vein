@@ -1,101 +1,87 @@
 # Weather Vein
 
-CSCI 5980 final project workspace for Prior Fitted Networks for contextual Bayesian
-optimization on the wake steering problem. The project studies how surrogate models
-and reinforcement learning methods can improve wind farm power production by steering
-upstream turbine wakes away from downstream turbines.
+Weather Vein is a CSCI 8980 final project studying wake steering for wind farm
+control. The project compares classical Bayesian optimization, Prior Fitted
+Network based surrogates, and reinforcement learning baselines on the WFCRL wind
+farm control benchmark.
 
-Team:
+The central question is whether PFN-style models can provide useful few-shot or
+zero-shot optimization behavior across wind farm layouts, reducing the number of
+expensive simulator calls needed to find strong turbine yaw settings.
 
-- Aleksei Rozanov
-- Kevin Babashov
-- Zeph Johnson
+## Project Overview
 
-## Project Context
+Wind turbines can reduce downstream power production by creating wakes: slower,
+more turbulent wind behind upstream turbines. Wake steering adjusts turbine yaw
+angles so upstream wakes are redirected away from downstream turbines.
 
-The current project uses WFCRL to evaluate wind farm control policies. In this setup,
-the controller chooses turbine yaw changes, and the simulator returns farm-level power
-and turbine-level measurements.
+This repository evaluates wake steering as a contextual Bayesian optimization
+problem. Given a wind farm layout, wind conditions, turbine measurements, and a
+candidate yaw vector, each method attempts to maximize farm-level reward.
 
-Key context variables:
+Methods compared in this project include:
 
-- Wind speed
-- Wind direction
-- Turbine coordinates
-- Turbine yaw
-- Turbine-level wind and load measurements
-
-Current simulator focus:
-
-- FLORIS is the current working simulator.
-- FAST.Farm is the intended next simulator target if time permits.
-
-Current scenario framing:
-
-- Scenario 1: fixed wind speed of 8 m/s and fixed wind direction of 270 degrees.
-- Scenario 2: randomized train-time initial conditions, with wind speed sampled from a
-  Weibull distribution and wind direction sampled from a normal distribution; test-time
-  evaluation remains fixed at 8 m/s and 270 degrees.
-- Scenario 3: future expansion target if time permits.
-
-Methods under comparison:
-
-- Gaussian Process contextual Bayesian optimization
+- Do-nothing and random baselines
+- Gaussian process Bayesian optimization
+- PFNs4BO
 - TabPFN
 - GraphPFN
-- PPO / RL baselines
-- Do-nothing and random baselines
+- Axial PFN
+- PPO reinforcement learning
 
-TabPFN note: the active notebook uses the hosted Prior Labs client
-`tabpfn_client.TabPFNRegressor` for reward/power regression. Store your token in
-Colab Secrets as `TABPFN_TOKEN`, enable notebook access, and run the notebook's
-TabPFN authentication cell before any `.fit()` call. If the token is missing or
-invalid, the notebook uses a clearly labeled `TabPFN-Fallback` sklearn surrogate
-so the rest of the FLORIS Scenario 2 pipeline can still run.
+The main simulator used for final results is FLORIS through the WFCRL
+environment. FAST.Farm/OpenFAST experiments are included as exploratory work, but
+were too computationally expensive for the full final sweep.
 
-## Repo Map
+## Repository Structure
 
-- `CSCI_5980_notebooks/WFCRL_GraphPFN_TabPFN_V2.ipynb`: active GraphPFN and TabPFN
-  experiment notebook.
-- `CSCI_5980_notebooks/WFCRL_GraphPFN_TabPFN_Scenario1.ipynb`: Scenario 1 GraphPFN
-  and TabPFN workflow.
-- `CSCI_5980_notebooks/evaluate_scenarios.py`: Python runner that evaluates
-  Scenario 1 and Scenario 2 together on FLORIS and writes comparable CSV outputs.
-- `CSCI_5980_notebooks/GraphicalFailure_wfcrl.ipynb`: investigation of why raw graph
-  inputs fail with TabPFN.
-- `CSCI_5980_notebooks/WFCRL_GraphPFN_Synthetic.ipynb`: synthetic GraphPFN
-  experiments.
-- `wfcrl-env/`: WFCRL environment code, including FLORIS and FAST.Farm interfaces.
-- `CSCI_5980_notebooks/__simul__/floris/`: generated FLORIS simulation cases.
+- `CSCI_5980_notebooks/`: main experiment notebooks and generated results
+- `CSCI_5980_notebooks/WFCRL_GraphPFN_TabPFN_V2.ipynb`: GraphPFN and TabPFN
+  Scenario II workflow
+- `CSCI_5980_notebooks/WFCRL_GraphPFN_TabPFN_Scenario1.ipynb`: Scenario I
+  GraphPFN and TabPFN workflow
+- `CSCI_5980_notebooks/WFCRL_PFNs_FastFarm.ipynb`: exploratory FAST.Farm
+  notebook
+- `CSCI_5980_notebooks/WFCRL_PFNs_FastFarm_Windows.ipynb`: Windows-oriented
+  FAST.Farm setup notebook
+- `CSCI_5980_notebooks/evaluate_scenarios.py`: script for running comparable
+  FLORIS evaluations
+- `CSCI_5980_notebooks/results/`: result CSVs and final figures
+- `wfcrl-env/`: local WFCRL environment code and simulator interfaces
+- `kernel-wfcrl/`: Jupyter kernel configuration used for FAST.Farm experiments
 
 ## Setup
 
-The WFCRL environment package is kept in `wfcrl-env/`.
+Create a Python environment and install the main dependencies:
 
 ```bash
-pip install pandas scipy scikit-learn torch torch-geometric tabpfn-client python-dotenv
+python -m venv .venv
+source .venv/bin/activate
+pip install -U pip
+pip install pandas numpy scipy scikit-learn matplotlib torch torch-geometric gpytorch tabpfn-client python-dotenv
+```
+
+Install the local WFCRL environment:
+
+```bash
 cd wfcrl-env
 pip install -e .
+cd ..
 ```
 
-To work with FAST.Farm, WFCRL expects the simulator dependencies to be available.
-From inside `wfcrl-env/`, the upstream setup path is:
+For TabPFN runs, store your Prior Labs API token in a local `.env` file:
 
 ```bash
-wfcrl-simulator fastfarm
-python examples/example_fastfarm.py
+TABPFN_TOKEN=your_token_here
 ```
 
-## Running Scenario 1 and 2 Together
+Do not commit `.env` or API keys to GitHub.
 
-Use the Python runner when collecting final project results. It evaluates both
-Scenario 1 and Scenario 2 for each selected FLORIS layout and seed, then writes:
+## Running Experiments
 
-- `CSCI_5980_notebooks/results/scenario_1_2_floris_results.csv`
-- `CSCI_5980_notebooks/results/scenario_1_2_floris_summary.csv`
-- `CSCI_5980_notebooks/results/method_counts.csv`
+Most experiments were run from Jupyter notebooks in `CSCI_5980_notebooks/`.
 
-Quick smoke test:
+For a quick FLORIS smoke test using the Python runner:
 
 ```bash
 python CSCI_5980_notebooks/evaluate_scenarios.py \
@@ -106,78 +92,56 @@ python CSCI_5980_notebooks/evaluate_scenarios.py \
   --max-steps 5 \
   --graph-train-steps 1 \
   --cpu \
-  --output-dir results_smoke
+  --output-dir CSCI_5980_notebooks/results_smoke
 ```
 
-Full Kevin-branch FLORIS run:
+For larger final runs, use more layouts, seeds, candidate yaw vectors, and
+environment steps. The final FLORIS experiments use 150 environment steps.
 
-```bash
-python CSCI_5980_notebooks/evaluate_scenarios.py \
-  --layouts slide \
-  --seeds 0 1 2 \
-  --n-initial 32 \
-  --n-candidates 1024 \
-  --max-steps 150 \
-  --graph-train-steps 100
+## Results
+
+Final result artifacts are stored in `CSCI_5980_notebooks/results/`, including:
+
+- Scenario II episode-return tables
+- Scenario II improvement-over-do-nothing figures
+- CSV files used to generate the paper tables and plots
+
+The final analysis found that PFN-based methods are competitive across several
+layouts, with PFN variants winning among non-baseline methods on many layouts.
+PPO is stronger on several layouts where it was evaluated, but it requires direct
+environment interaction during training, while PFN-based approaches are intended
+to reduce online simulator usage.
+
+## FAST.Farm Notes
+
+FAST.Farm through OpenFAST was tested as a higher-fidelity alternative to FLORIS.
+This direction is scientifically valuable because FAST.Farm models wind farm
+dynamics in greater physical detail. In practice, the runtime was too large for
+the deadline and available hardware, with some runs continuing for multiple days
+without completing. The FAST.Farm notebooks are therefore included as exploratory
+work and a starting point for future high-performance-computing runs.
+
+## Team
+
+- Aleksei Rozanov
+- Kevin Babashov
+- Zephaniah Johnson
+
+## License
+
+This project is licensed under the MIT License. See `LICENSE` for details.
+
+## Citation
+
+If citing this repository, use:
+
+```bibtex
+@misc{weathervein2026,
+  author = {Rozanov, Aleksei and Babashov, Kevin and Johnson, Zephaniah},
+  title = {Weather Vein: Prior Fitted Networks for Wake Steering Control},
+  year = {2026},
+  publisher = {GitHub},
+  journal = {GitHub Repository},
+  howpublished = {\url{https://github.com/Pehz63/weather-vein}}
+}
 ```
-
-If `TABPFN_TOKEN` is available in the environment, the runner uses the hosted
-Prior Labs TabPFN regressor. Otherwise it uses the same clearly labeled
-`TabPFN-Fallback` sklearn surrogate so the FLORIS sweep can still finish.
-
-## Actionables
-
-1. Keep the current documentation and notebook work on the `Kevin` branch. Once the
-   current rebase state is resolved, create or refresh a shared `dev` branch so graph
-   results can be merged into one cohesive codebase for Aryan to examine.
-2. Expand Kevin's GraphPFN and TabPFN work from Scenario 1 to Scenario 2.
-   Implemented in `CSCI_5980_notebooks/WFCRL_GraphPFN_TabPFN_V2.ipynb` for
-   FLORIS by training on randomized Scenario 2 contexts and evaluating on the
-   fixed 8 m/s, 270 degree test condition. The paired Scenario 1/2 evaluation
-   runner is `CSCI_5980_notebooks/evaluate_scenarios.py`.
-3. If time permits, switch the environment from FLORIS to FAST.Farm.
-4. If time permits, switch or extend the experiments to Scenario 3.
-5. Unify result collection across GP, TabPFN, GraphPFN, PPO, do-nothing, and random
-   baselines so final report figures are comparable.
-6. Prioritize final report and code work first, then the poster.
-7. Complete check-ins independently for April 13 and April 27. As of April 20, 2026,
-   the April 13 check-in is already past, and April 27 is the remaining check-in.
-
-## Future Work
-
-Aleksei:
-
-- Expand experiments to Scenario 3 after completing Scenario 2.
-
-Kevin:
-
-- Expand GraphPFN and TabPFN to Scenario 2. The FLORIS notebook path is now in
-  place; the next step is running the full layout/seed sweep and collecting CSV
-  outputs.
-- Work on switching the environment from FLORIS to FAST.Farm.
-
-Zeph:
-
-- Expand RL PPO to Scenarios 1 and 2.
-- Work on switching the environment to FAST.Farm and/or trying Scenario 3.
-
-Whole team:
-
-- Finish cohesive code and final report work before the poster.
-- Keep check-ins independent for April 13 and April 27.
-
-## Experiment Notes
-
-Scenario 1 GraphPFN and TabPFN results may underperform for several reasons:
-
-- The graph structure may be weak, incomplete, or mismatched to the wake dependency
-  structure.
-- Context size may be too small for stable in-context behavior.
-- Candidate ranking quality may limit yaw selection.
-- GraphPFN training priors may not transfer cleanly from synthetic graph structure to
-  WFCRL FLORIS layouts.
-
-Scenario 2 is especially important because randomized initial conditions make wind
-speed and wind direction true contextual variables. Contextual Bayesian optimization
-and PFN-style posterior prediction should be evaluated there before drawing final
-project conclusions.
