@@ -1,98 +1,93 @@
-# Python Project Starter Repository
+Weather Vein
+Weather Vein is a CSCI 8980 final project studying wake steering for wind farm control. The project compares classical Bayesian optimization, Prior Fitted Network based surrogates, and reinforcement learning baselines on the WFCRL wind farm control benchmark.
 
-This repository serves as a template demonstrating Python best practices for research projects. It includes:
+The central question is whether PFN-style models can provide useful few-shot or zero-shot optimization behavior across wind farm layouts, reducing the number of expensive simulator calls needed to find strong turbine yaw settings.
 
-- An example Python program (reading in data and plotting)
-- Command-line argument parsing ([argparse](https://docs.python.org/3/library/argparse.html))
-- Code style checking, aka "linting" (with [ruff](https://github.com/astral-sh/ruff))
-- Static type checking (with [mypy](https://mypy.readthedocs.io/))
-- Pre-commit hooks that run these checks automatically (with [pre-commit](https://pre-commit.com/))
-- Testing (with [pytest](https://docs.pytest.org/))
-- Continuous Integration (with [GitHub Actions](https://github.com/features/actions))
-- Package management (with [pip](https://pip.pypa.io/) and [pyproject.toml](https://pip.pypa.io/en/stable/reference/build-system/pyproject-toml/))
-- An open source license ([MIT](https://opensource.org/licenses/MIT))
+Project Overview
+Wind turbines can reduce downstream power production by creating wakes: slower, more turbulent wind behind upstream turbines. Wake steering adjusts turbine yaw angles so upstream wakes are redirected away from downstream turbines.
 
-## Features
+This repository evaluates wake steering as a contextual Bayesian optimization problem. Given a wind farm layout, wind conditions, turbine measurements, and a candidate yaw vector, each method attempts to maximize farm-level reward.
 
-### 1. Data Processing and Visualization
+Methods compared in this project include:
 
-The main script ([starter_repo/plot_data.py](starter_repo/plot_data.py)) can be replaced with any code that you want to write.
+Do-nothing and random baselines
+Gaussian process Bayesian optimization
+PFNs4BO
+TabPFN
+GraphPFN
+Axial PFN
+PPO reinforcement learning
+The main simulator used for final results is FLORIS through the WFCRL environment. FAST.Farm/OpenFAST experiments are included as exploratory work, but were too computationally expensive for the full final sweep.
 
-Installation can be done as follows:
+Repository Structure
+CSCI_5980_notebooks/: main experiment notebooks and generated results
+CSCI_5980_notebooks/WFCRL_GraphPFN_TabPFN_V2.ipynb: GraphPFN and TabPFN Scenario II workflow
+CSCI_5980_notebooks/WFCRL_GraphPFN_TabPFN_Scenario1.ipynb: Scenario I GraphPFN and TabPFN workflow
+CSCI_5980_notebooks/WFCRL_PFNs_FastFarm.ipynb: exploratory FAST.Farm notebook
+CSCI_5980_notebooks/WFCRL_PFNs_FastFarm_Windows.ipynb: Windows-oriented FAST.Farm setup notebook
+CSCI_5980_notebooks/evaluate_scenarios.py: script for running comparable FLORIS evaluations
+CSCI_5980_notebooks/results/: result CSVs and final figures
+wfcrl-env/: local WFCRL environment code and simulator interfaces
+kernel-wfcrl/: Jupyter kernel configuration used for FAST.Farm experiments
+Setup
+Create a Python environment and install the main dependencies:
 
-```bash
-# Install the package
-pip install .
+python -m venv .venv
+source .venv/bin/activate
+pip install -U pip
+pip install pandas numpy scipy scikit-learn matplotlib torch torch-geometric gpytorch tabpfn-client python-dotenv
+Install the local WFCRL environment:
 
-# Create a plot from the sample data
-python -m starter_repo.plot_data data/sample.csv year population --title "Population Growth" -o population.png
-```
+cd wfcrl-env
+pip install -e .
+cd ..
+For TabPFN runs, store your Prior Labs API token in a local .env file:
 
-### 2. Testing
+TABPFN_TOKEN=your_token_here
+Do not commit .env or API keys to GitHub.
 
-Writing unit tests is a good way to ensure that your code behaves as expected, and you can write unit tests before you write the code that you want to test (aka "test-driven development"). Test files are located in the [tests/](tests/) directory.
+Running Experiments
+Most experiments were run from Jupyter notebooks in CSCI_5980_notebooks/.
 
-To run tests:
+For a quick FLORIS smoke test using the Python runner:
 
-```bash
-pip install ".[dev]"  # Install development dependencies
-pytest
-```
+python CSCI_5980_notebooks/evaluate_scenarios.py \
+  --layouts Turb3_Row1_Floris \
+  --seeds 0 \
+  --n-initial 2 \
+  --n-candidates 4 \
+  --max-steps 5 \
+  --graph-train-steps 1 \
+  --cpu \
+  --output-dir CSCI_5980_notebooks/results_smoke
+For larger final runs, use more layouts, seeds, candidate yaw vectors, and environment steps. The final FLORIS experiments use 150 environment steps.
 
-### 3. Code Quality Tools
+Results
+Final result artifacts are stored in CSCI_5980_notebooks/results/, including:
 
-This project uses several tools to maintain code quality:
+Scenario II episode-return tables
+Scenario II improvement-over-do-nothing figures
+CSV files used to generate the paper tables and plots
+The final analysis found that PFN-based methods are competitive across several layouts, with PFN variants winning among non-baseline methods on many layouts. PPO is stronger on several layouts where it was evaluated, but it requires direct environment interaction during training, while PFN-based approaches are intended to reduce online simulator usage.
 
-#### Pre-commit Hooks
+FAST.Farm Notes
+FAST.Farm through OpenFAST was tested as a higher-fidelity alternative to FLORIS. This direction is scientifically valuable because FAST.Farm models wind farm dynamics in greater physical detail. In practice, the runtime was too large for the deadline and available hardware, with some runs continuing for multiple days without completing. The FAST.Farm notebooks are therefore included as exploratory work and a starting point for future high-performance-computing runs.
 
-We use [pre-commit](.pre-commit-config.yaml) with:
+Team
+Aleksei Rozanov
+Kevin Babashov
+Zephaniah Johnson
+License
+This project is licensed under the MIT License. See LICENSE for details.
 
-- [Ruff](https://github.com/charliermarsh/ruff) for linting and formatting
-- [mypy](https://mypy.readthedocs.io/) for static type checking
+Citation
+If citing this repository, use:
 
-To set up pre-commit:
-
-```bash
-pip install pre-commit
-pre-commit install
-```
-
-### 4. Continuous Integration
-
-GitHub Actions workflows are set up for:
-
-- [Linting](.github/workflows/lint.yml): Runs pre-commit hooks (Ruff and mypy)
-- [Testing](.github/workflows/test.yml): Runs pytest on multiple Python versions
-
-
-## Contributing
-
-1. Fork the repository
-2. Install development dependencies: `pip install -e ".[dev]"`
-3. Install pre-commit hooks: `pre-commit install`
-4. Make your changes
-5. Run tests: `pytest`
-6. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-> **Note**: Without a license, the code is under exclusive copyright by default. This means no one can copy, distribute, or modify your work without facing potential legal consequences. Adding a license (like MIT) explicitly grants these permissions, making it clear how others can use your code.
-
-## Citation
-
-This was created by [Graham Neubig](https://phontron.com) primarily as an example for student researchers.
-
-One final thing: when you publish your research code, it's good to add a BibTeX entry like this to the paper (or just the repo) so people can cite it easily:
-
-```bibtex
-@misc{neubig2025starter,
-  author = {Graham Neubig},
-  title = {Python Project Starter Repository},
-  year = {2025},
+@misc{weathervein2026,
+  author = {Rozanov, Aleksei and Babashov, Kevin and Johnson, Zephaniah},
+  title = {Weather Vein: Prior Fitted Networks for Wake Steering Control},
+  year = {2026},
   publisher = {GitHub},
   journal = {GitHub Repository},
-  howpublished = {\url{https://github.com/neubig/starter-repo}}
+  howpublished = {\url{https://github.com/Pehz63/weather-vein}}
 }
-```
