@@ -44,3 +44,5 @@ ENV/
 !results/*.png
 !results_zeph/*.csv
 !results_zeph/*.png
+!RL_PPO/scenario_1/results/*.png
+!RL_PPO/scenario_1/results/*.csv
