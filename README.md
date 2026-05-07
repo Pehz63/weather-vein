@@ -75,10 +75,10 @@ Do not commit `.env` files or API keys.
 ## Running Experiments
 
 Most workflows are organized as Jupyter notebooks inside
-`CSCI_5980_notebooks/`. The main FLORIS experiments use WFCRL layouts and compare
+Python notebooks for each respective branch. The main FLORIS experiments use WFCRL layouts and compare
 methods under fixed and randomized wind contexts.
 
-A small smoke test can be run with:
+A small test can be run on the Kevin Branch with:
 
 ```bash
 python CSCI_5980_notebooks/evaluate_scenarios.py \
@@ -109,7 +109,7 @@ the goal is to reduce the number of online simulator calls.
 
 ## FAST.Farm and OpenFAST
 
-The project also includes exploratory work with FAST.Farm through OpenFAST as a
+The Kevin branch of the project also includes exploratory work with FAST.Farm through OpenFAST as a
 higher-fidelity alternative to FLORIS. FAST.Farm is more physically detailed, but
 the experiments were too computationally expensive for the available hardware and
 project deadline. Some runs continued for multiple days without completing. The
